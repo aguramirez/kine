@@ -1,0 +1,83 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id        String   @id @default(uuid())
+  fullName  String
+  email     String   @unique
+  dni       String   @unique
+  password  String
+  username  String   @unique
+  createdAt DateTime @default(now())
+}
+
+model Paciente {
+  id               String    @id @default(uuid())
+  fullName         String
+  dni              String    @unique
+  phone            String?
+  email            String?
+  gender           String?
+  age              Int?
+  height           Float?
+  weight           Float?
+  notes            String?
+  sessionsCount    Int       @default(0)
+  totalSessions    Int       @default(0)
+  lastSessionDate  DateTime?
+  healthInsurance  String?
+  totalInvoiced    Float     @default(0)
+  totalPaid        Float     @default(0)
+  difference       Float     @default(0)
+  isActive         Boolean   @default(true)
+  dischargeDate    DateTime?
+  diagnoses        String[]
+  spadi            Json      @default("{}")
+  spadiEnd         Json?     @default("{}")
+  createdAt        DateTime  @default(now())
+  rutinas          Rutina[]
+}
+
+model Ejercicio {
+  id          String   @id @default(uuid())
+  name        String
+  description String
+  videoUrl    String?
+  createdAt   DateTime @default(now())
+}
+
+model Rutina {
+  id          String   @id @default(uuid())
+  name        String
+  description String
+  dias        Dia[]
+  pacienteId  String?
+  paciente    Paciente? @relation(fields: [pacienteId], references: [id])
+  createdAt   DateTime @default(now())
+}
+
+model Dia {
+  id         String            @id @default(uuid())
+  name       String
+  rutinaId   String
+  rutina     Rutina            @relation(fields: [rutinaId], references: [id], onDelete: Cascade)
+  ejercicios EjercicioEnDia[]
+  createdAt  DateTime          @default(now())
+}
+
+model EjercicioEnDia {
+  id         String    @id @default(uuid())
+  diaId      String
+  dia        Dia       @relation(fields: [diaId], references: [id], onDelete: Cascade)
+  exerciseId String
+  sets       Int
+  reps       Int
+  time       String?
+  createdAt  DateTime  @default(now())
+}
