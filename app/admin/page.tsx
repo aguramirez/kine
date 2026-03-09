@@ -96,13 +96,13 @@ export default function AdminLoginPage() {
         }}
       >
         {/* Back to patient login */}
-        <Link 
+        {/* <Link 
           href="/"
           className="self-start mb-8 flex items-center gap-1.5 text-xs text-slate-600 hover:text-primary transition-colors duration-300 group"
         >
           <span className="material-symbols-outlined text-sm group-hover:-translate-x-1 transition-transform duration-300">arrow_back</span>
           <span>Volver al inicio</span>
-        </Link>
+        </Link> */}
 
         {/* Logo */}
         <div className="mb-6 relative">

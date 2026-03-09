@@ -189,14 +189,14 @@ export default function PacienteLoginPage() {
         </div>
 
         {/* Admin link */}
-        <Link 
+        {/* <Link 
           href="/admin"
           className="mt-8 flex items-center gap-2 text-xs text-slate-600 hover:text-primary transition-colors duration-300 group"
         >
           <span className="material-symbols-outlined text-sm group-hover:text-primary transition-colors">admin_panel_settings</span>
           <span>Acceso Administrador</span>
           <span className="material-symbols-outlined text-sm opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">chevron_right</span>
-        </Link>
+        </Link> */}
 
         {/* Footer */}
         <p className="text-center text-[10px] text-slate-700 mt-6 tracking-wide">

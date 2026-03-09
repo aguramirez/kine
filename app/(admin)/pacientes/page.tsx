@@ -56,7 +56,19 @@ type ModalMode = "create" | "edit" | "delete" | "view" | null;
 
 const EMPTY_SPADI: Record<string, number> = {
   espm: 0, csasel: 0, aaaeuea: 0, atlppdsc: 0, aeceba: 0, lep: 0, lle: 0, pucouj: 0,
-  pucclbd: 0, plp: 0, cuoeuea: 0, cuopd4k: 0, cadsbt: 0, tps: 0, tds: 0, tss: 0,
+  pucclbd: 0, plp: 0, cuoeuea: 0, cuopd4k: 0, cadsbt: 0,
+};
+
+const calculateSpadiPercents = (spadiData: Record<string, number>) => {
+  const painSum = (spadiData.espm || 0) + (spadiData.csasel || 0) + (spadiData.aaaeuea || 0) + (spadiData.atlppdsc || 0) + (spadiData.aeceba || 0);
+  const tps = Number(((painSum / 50) * 100).toFixed(1));
+
+  const disabilitySum = (spadiData.lep || 0) + (spadiData.lle || 0) + (spadiData.pucouj || 0) + (spadiData.pucclbd || 0) + (spadiData.plp || 0) + (spadiData.cuoeuea || 0) + (spadiData.cuopd4k || 0) + (spadiData.cadsbt || 0);
+  const tds = Number(((disabilitySum / 80) * 100).toFixed(1));
+
+  const tss = Number((((painSum + disabilitySum) / 130) * 100).toFixed(1));
+
+  return { ...spadiData, tps, tds, tss };
 };
 
 const SPADI_LABELS: Record<string, string> = {
@@ -65,12 +77,12 @@ const SPADI_LABELS: Record<string, string> = {
   aaaeuea: "Al alcanzar algo en un estante alto",
   atlppdsc: "Al tocar la parte posterior del cuello",
   aeceba: "Al empujar con el brazo afectado",
-  lep: "Lavarse la espalda",
-  lle: "Llevar objeto de 5kg",
-  pucouj: "Ponerse una camisa o jersey",
-  pucclbd: "Ponerse un cinturón o broche",
-  plp: "Preparar la comida",
-  cuoeuea: "Colocar un objeto encima de la cabeza",
+  lep: "Lavándose el pelo",
+  lle: "Lavándose la espalda",
+  pucouj: "Ponerse una camiseta o jersey",
+  pucclbd: "Ponerse una camisa con los broches delante",
+  plp: "Poniéndose los pantalones",
+  cuoeuea: "Colocando un objeto en un estante alto",
   cuopd4k: "Cargar un objeto pesado (+4.5 kg)",
   cadsbt: "Coger algo del bolsillo trasero",
   tps: "Total Pain Score",
@@ -81,6 +93,7 @@ const SPADI_LABELS: Record<string, string> = {
 const DEFAULT_FORM = {
   fullName: "", dni: "", phone: "", email: "", gender: "", age: "",
   height: "", weight: "", notes: "", healthInsurance: "", totalSessions: "", diagnoses: [] as string[],
+  totalInvoiced: "", totalPaid: "",
 };
 
 export default function PacientesPage() {
@@ -189,6 +202,8 @@ export default function PacientesPage() {
       notes: p.notes || "",
       healthInsurance: p.healthInsurance || "",
       totalSessions: p.totalSessions != null ? String(p.totalSessions) : "",
+      totalInvoiced: p.totalInvoiced != null ? String(p.totalInvoiced) : "",
+      totalPaid: p.totalPaid != null ? String(p.totalPaid) : "",
       diagnoses: [...p.diagnoses],
     });
     setFormSpadi(p.spadi && typeof p.spadi === "object" ? { ...EMPTY_SPADI, ...(p.spadi as Record<string, number>) } : { ...EMPTY_SPADI });
@@ -242,9 +257,11 @@ export default function PacientesPage() {
       notes: form.notes?.trim() || null,
       healthInsurance: form.healthInsurance.trim() || null,
       totalSessions: form.totalSessions ? Number(form.totalSessions) : 0,
+      totalInvoiced: form.totalInvoiced ? Number(form.totalInvoiced) : 0,
+      totalPaid: form.totalPaid ? Number(form.totalPaid) : 0,
       diagnoses: form.diagnoses,
-      spadi: formSpadi,
-      spadiEnd: formSpadiEnd,
+      spadi: calculateSpadiPercents(formSpadi),
+      spadiEnd: calculateSpadiPercents(formSpadiEnd),
     };
 
     try {
@@ -636,37 +653,45 @@ export default function PacientesPage() {
                   {activeTab === "spadi" && (
                     <div className="space-y-3 pb-4">
                       <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest bg-slate-50 dark:bg-white/5 p-3 rounded-xl mb-2 text-center border border-slate-200 dark:border-slate-800">Evaluación Inicial</p>
-                      {Object.entries(selected.spadi || {}).map(([key, val]) => (
-                        <div key={key} className="flex flex-col gap-2 p-3 bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-slate-800 rounded-xl">
-                          <span className="text-xs text-slate-700 dark:text-slate-300 font-bold leading-snug">
-                            {SPADI_LABELS[key] || key}
-                          </span>
-                          <div className="flex items-center gap-3 mt-1">
-                            <div className="flex-1 bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
-                              <div className="bg-primary h-full rounded-full transition-all" style={{ width: `${(Number(val) / 10) * 100}%` }} />
+                      {Object.keys(EMPTY_SPADI).concat(['tps', 'tds', 'tss']).map((key) => {
+                        const val = selected.spadi?.[key] || 0;
+                        const isCalculated = ['tps', 'tds', 'tss'].includes(key);
+                        return (
+                          <div key={key} className={`flex flex-col gap-2 p-3 border rounded-xl ${isCalculated ? 'bg-primary/5 border-primary/20 mt-4' : 'bg-slate-50 dark:bg-white/[0.03] border-slate-200 dark:border-slate-800'}`}>
+                            <span className={`text-xs font-bold leading-snug ${isCalculated ? 'text-primary' : 'text-slate-700 dark:text-slate-300'}`}>
+                              {SPADI_LABELS[key] || key}
+                            </span>
+                            <div className="flex items-center gap-3 mt-1">
+                              <div className="flex-1 bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
+                                <div className="bg-primary h-full rounded-full transition-all" style={{ width: `${isCalculated ? val : (Number(val) / 10) * 100}%` }} />
+                              </div>
+                              <span className="text-sm font-black text-primary w-10 text-right">{String(val)}{isCalculated ? '%' : ''}</span>
                             </div>
-                            <span className="text-sm font-black text-primary w-6 text-right">{String(val)}</span>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                   {activeTab === "spadiEnd" && (
                     <div className="space-y-3 pb-4">
                       <p className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest bg-emerald-500/5 p-3 rounded-xl mb-2 text-center border border-emerald-500/20">Evaluación Final</p>
-                      {Object.entries(selected.spadiEnd || {}).map(([key, val]) => (
-                        <div key={key} className="flex flex-col gap-2 p-3 bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-slate-800 rounded-xl">
-                          <span className="text-xs text-slate-700 dark:text-slate-300 font-bold leading-snug">
-                            {SPADI_LABELS[key] || key}
-                          </span>
-                          <div className="flex items-center gap-3 mt-1">
-                            <div className="flex-1 bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
-                              <div className="bg-emerald-500 h-full rounded-full transition-all" style={{ width: `${(Number(val) / 10) * 100}%` }} />
+                      {Object.keys(EMPTY_SPADI).concat(['tps', 'tds', 'tss']).map((key) => {
+                        const val = selected.spadiEnd?.[key] || 0;
+                        const isCalculated = ['tps', 'tds', 'tss'].includes(key);
+                        return (
+                          <div key={key} className={`flex flex-col gap-2 p-3 border rounded-xl ${isCalculated ? 'bg-emerald-500/5 border-emerald-500/20 mt-4' : 'bg-slate-50 dark:bg-white/[0.03] border-slate-200 dark:border-slate-800'}`}>
+                            <span className={`text-xs font-bold leading-snug ${isCalculated ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-700 dark:text-slate-300'}`}>
+                              {SPADI_LABELS[key] || key}
+                            </span>
+                            <div className="flex items-center gap-3 mt-1">
+                              <div className="flex-1 bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
+                                <div className="bg-emerald-500 h-full rounded-full transition-all" style={{ width: `${isCalculated ? val : (Number(val) / 10) * 100}%` }} />
+                              </div>
+                              <span className="text-sm font-black text-emerald-500 w-10 text-right">{String(val)}{isCalculated ? '%' : ''}</span>
                             </div>
-                            <span className="text-sm font-black text-emerald-500 w-6 text-right">{String(val)}</span>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                   {activeTab === "chart" && (
@@ -675,12 +700,15 @@ export default function PacientesPage() {
                       <div className="flex-1 w-full min-h-[300px]">
                         <ResponsiveContainer width="100%" height="100%">
                           <BarChart
-                            data={Object.keys(EMPTY_SPADI).map(key => ({
-                              name: key.toUpperCase(),
-                              inicial: Number(selected?.spadi?.[key] || 0),
-                              final: Number(selected?.spadiEnd?.[key] || 0),
-                              fullLabel: SPADI_LABELS[key] || key
-                            }))}
+                            data={Object.keys(EMPTY_SPADI).concat(['tps', 'tds', 'tss']).map(key => {
+                              const isCalc = ['tps', 'tds', 'tss'].includes(key);
+                              return {
+                                name: key.toUpperCase(),
+                                inicial: isCalc ? (Number(selected?.spadi?.[key] || 0) / 10) : Number(selected?.spadi?.[key] || 0),
+                                final: isCalc ? (Number(selected?.spadiEnd?.[key] || 0) / 10) : Number(selected?.spadiEnd?.[key] || 0),
+                                fullLabel: SPADI_LABELS[key] || key
+                              };
+                            })}
                             margin={{ top: 20, right: 10, left: -25, bottom: 5 }}
                           >
                             <CartesianGrid strokeDasharray="3 3" opacity={0.15} vertical={false} />
@@ -691,11 +719,15 @@ export default function PacientesPage() {
                               contentStyle={{ backgroundColor: '#1A1A1A', borderColor: '#333', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }}
                               itemStyle={{ color: '#fff', fontSize: '12px', fontWeight: 'bold' }}
                               labelStyle={{ color: '#888', marginBottom: '8px', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}
-                              formatter={(value: any, name: any) => [value, name === 'inicial' ? 'SPADI Inicial' : 'SPADI Final']}
+                              formatter={(value: any, name: any, props: any) => {
+                                const isCalc = ['TPS', 'TDS', 'TSS'].includes(props?.payload?.name);
+                                const valStr = isCalc ? `${(Number(value)*10).toFixed(0)}%` : value;
+                                return [valStr, name === 'inicial' ? 'SPADI Inicial' : 'SPADI Final'];
+                              }}
                               labelFormatter={(label: any, p: any) => p[0]?.payload?.fullLabel || label}
                             />
                             <Legend wrapperStyle={{ paddingTop: '20px', fontSize: '12px' }} />
-                            <Bar dataKey="inicial" name="Inicial" fill="#94a3b8" radius={[4, 4, 0, 0]} maxBarSize={30} />
+                            <Bar dataKey="inicial" name="Inicial" fill="#757575ff" radius={[4, 4, 0, 0]} maxBarSize={30} />
                             <Bar dataKey="final" name="Final" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={30} />
                           </BarChart>
                         </ResponsiveContainer>
@@ -813,6 +845,18 @@ export default function PacientesPage() {
                           <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">Sesiones Totales</label>
                           <input type="number" value={form.totalSessions} onChange={(e) => updateForm("totalSessions", e.target.value)} placeholder="20" min={0} className="w-full px-4 py-3 bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary/40 focus:border-primary/50 outline-none transition-all dark:text-white placeholder:text-slate-400" />
                         </div>
+                        {modalMode === "edit" && (
+                          <>
+                            <div>
+                              <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">Total Facturado ($)</label>
+                              <input type="number" value={form.totalInvoiced} onChange={(e) => updateForm("totalInvoiced", e.target.value)} placeholder="0" min={0} className="w-full px-4 py-3 bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary/40 focus:border-primary/50 outline-none transition-all dark:text-white placeholder:text-slate-400" />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">Total Cobrado ($)</label>
+                              <input type="number" value={form.totalPaid} onChange={(e) => updateForm("totalPaid", e.target.value)} placeholder="0" min={0} className="w-full px-4 py-3 bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary/40 focus:border-primary/50 outline-none transition-all dark:text-white placeholder:text-slate-400" />
+                            </div>
+                          </>
+                        )}
                         <div className="col-span-full">
                           <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">Notas</label>
                           <textarea value={form.notes} onChange={(e) => updateForm("notes", e.target.value)} placeholder="Observaciones adicionales..." rows={2} className="w-full px-4 py-3 bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary/40 outline-none transition-all dark:text-white placeholder:text-slate-400 resize-none" />
@@ -853,7 +897,9 @@ export default function PacientesPage() {
                     </div>
                   )}
 
-                  {activeTab === "spadi" && (
+                  {activeTab === "spadi" && (() => {
+                    const currentCalculated = calculateSpadiPercents(formSpadi);
+                    return (
                     <div className="space-y-3 pb-4">
                       <p className="text-xs text-slate-500 dark:text-slate-400 mb-3 bg-primary/5 p-3 rounded-lg border border-primary/10 flex flex-col items-center">
                         <span className="font-bold text-primary mb-1 uppercase tracking-widest text-[10px]">SPADI INICIAL</span>
@@ -879,10 +925,21 @@ export default function PacientesPage() {
                           </div>
                         </div>
                       ))}
+                      {/* Show calculations at bottom */}
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-6">
+                        {['tps', 'tds', 'tss'].map(key => (
+                          <div key={key} className="bg-primary/10 border border-primary/20 p-4 rounded-xl flex flex-col items-center justify-center">
+                            <span className="text-[10px] font-bold text-primary uppercase text-center mb-1">{SPADI_LABELS[key]}</span>
+                            <span className="text-2xl font-black text-primary">{currentCalculated[key as keyof typeof currentCalculated]}%</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  )}
+                  );})()}
 
-                  {activeTab === "spadiEnd" && (
+                  {activeTab === "spadiEnd" && (() => {
+                    const currentCalculated = calculateSpadiPercents(formSpadiEnd);
+                    return (
                     <div className="space-y-3 pb-4">
                       <p className="text-xs text-slate-500 dark:text-slate-400 mb-3 bg-emerald-500/5 p-3 rounded-lg border border-emerald-500/10 flex flex-col items-center">
                         <span className="font-bold text-emerald-500 mb-1 uppercase tracking-widest text-[10px]">SPADI FINAL</span>
@@ -908,8 +965,17 @@ export default function PacientesPage() {
                           </div>
                         </div>
                       ))}
+                      {/* Show calculations at bottom */}
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-6">
+                        {['tps', 'tds', 'tss'].map(key => (
+                          <div key={key} className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-xl flex flex-col items-center justify-center">
+                            <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase text-center mb-1">{SPADI_LABELS[key]}</span>
+                            <span className="text-2xl font-black text-emerald-500">{currentCalculated[key as keyof typeof currentCalculated]}%</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  )}
+                  );})()}
 
                   {activeTab === "chart" && (
                     <div className="w-full h-96 pt-4 pb-8 flex flex-col">
@@ -917,12 +983,19 @@ export default function PacientesPage() {
                       <div className="flex-1 w-full min-h-[300px]">
                         <ResponsiveContainer width="100%" height="100%">
                           <BarChart
-                            data={Object.keys(EMPTY_SPADI).map(key => ({
-                              name: key.toUpperCase(),
-                              inicial: Number(formSpadi[key] || 0),
-                              final: Number(formSpadiEnd[key] || 0),
-                              fullLabel: SPADI_LABELS[key] || key
-                            }))}
+                            data={(() => {
+                              const currIni = calculateSpadiPercents(formSpadi);
+                              const currFin = calculateSpadiPercents(formSpadiEnd);
+                              return Object.keys(EMPTY_SPADI).concat(['tps', 'tds', 'tss']).map(key => {
+                                const isCalc = ['tps', 'tds', 'tss'].includes(key);
+                                return {
+                                  name: key.toUpperCase(),
+                                  inicial: isCalc ? (Number(currIni[key as keyof typeof currIni] || 0) / 10) : Number(currIni[key as keyof typeof currIni] || 0),
+                                  final: isCalc ? (Number(currFin[key as keyof typeof currFin] || 0) / 10) : Number(currFin[key as keyof typeof currFin] || 0),
+                                  fullLabel: SPADI_LABELS[key] || key
+                                };
+                              });
+                            })()}
                             margin={{ top: 20, right: 10, left: -25, bottom: 5 }}
                           >
                             <CartesianGrid strokeDasharray="3 3" opacity={0.15} vertical={false} />
@@ -933,7 +1006,11 @@ export default function PacientesPage() {
                               contentStyle={{ backgroundColor: '#1A1A1A', borderColor: '#333', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }}
                               itemStyle={{ color: '#fff', fontSize: '12px', fontWeight: 'bold' }}
                               labelStyle={{ color: '#888', marginBottom: '8px', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}
-                              formatter={(value: any, name: any) => [value, name === 'inicial' ? 'SPADI Inicial' : 'SPADI Final']}
+                              formatter={(value: any, name: any, props: any) => {
+                                const isCalc = ['TPS', 'TDS', 'TSS'].includes(props?.payload?.name);
+                                const valStr = isCalc ? `${(Number(value)*10).toFixed(0)}%` : value;
+                                return [valStr, name === 'inicial' ? 'SPADI Inicial' : 'SPADI Final'];
+                              }}
                               labelFormatter={(label: any, p: any) => p[0]?.payload?.fullLabel || label}
                             />
                             <Legend wrapperStyle={{ paddingTop: '20px', fontSize: '12px' }} />
