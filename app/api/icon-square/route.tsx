@@ -12,7 +12,7 @@ export async function GET() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'linear-gradient(135deg, #ff6d00, #ea580c)',
+          background: 'linear-gradient(135deg, #9A938B, #7A7370)',
         }}
       >
         <svg width="250" height="240" viewBox="0 0 301 290" fill="none" xmlns="http://www.w3.org/2000/svg">

@@ -1,0 +1,83 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+@import "tailwindcss";
+
+/* Tailwind v4: Custom theme tokens */
+@theme {
+  /* Primario: taupe cálido #9A938B */
+  --color-primary: #9A938B;
+
+  /* Variantes del primario para hover, activos, etc. */
+  --color-primary-light: #B5B0AA;   /* taupe más claro para hover */
+  --color-primary-dark: #7A7370;    /* taupe más oscuro para pressed */
+
+  /* Fondos */
+  --color-background-light: #F5F3F1; /* crema muy suave — contrasta bien con texto oscuro */
+  --color-background-dark: #2C2C2C;  /* carbón oscuro #2C2C2C */
+  --color-card-dark: #3A3A3A;        /* tarjeta sobre fondo oscuro — ligeramente más claro */
+  --color-card-dark-2: #444444;      /* segundo nivel de elevación */
+
+  /* Superficie intermedia (modo claro) */
+  --color-surface-light: #EAE7E4;    /* gris cálido tenue */
+
+  /* Acentos — un tono arena dorado como acento secundario */
+  --color-accent: #C8B49A;           /* arena cálido — destaca sobre dark y light */
+  --color-accent-muted: #A89070;     /* versión más profunda del acento */
+
+  /* Texto */
+  --color-text-dark: #F0EDEA;        /* blanco roto — legible sobre #2C2C2C */
+  --color-text-muted: #AAA49E;       /* texto secundario / labels */
+  --color-text-light: #1E1C1A;       /* texto principal en modo claro */
+
+  /* Estados */
+  --color-success: #6DAB8A;          /* verde suave */
+  --color-warning: #D4A96A;          /* ámbar cálido */
+  --color-danger: #C0706A;           /* rojo terracota */
+
+  /* Misceláneas */
+  --font-display: "Inter", sans-serif;
+  --radius: 0.5rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+}
+
+/* Dark mode by default via .dark class */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@utility no-scrollbar {
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+body {
+  overscroll-behavior-y: none;
+  font-family: var(--font-display);
+}
+
+/* Global Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(154, 147, 139, 0.45); /* primario taupe con transparencia */
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(154, 147, 139, 0.85);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(154, 147, 139, 0.45) transparent;
+}

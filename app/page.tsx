@@ -52,7 +52,7 @@ export default function PacienteLoginPage() {
         <div 
           className="absolute -top-32 -right-32 w-96 h-96 rounded-full blur-[120px] transition-all duration-[2000ms]"
           style={{ 
-            background: 'radial-gradient(circle, rgba(255,109,0,0.15) 0%, transparent 70%)',
+            background: 'radial-gradient(circle, rgba(154,147,139,0.15) 0%, transparent 70%)',
             opacity: mounted ? 1 : 0,
             transform: mounted ? 'scale(1)' : 'scale(0.5)',
           }}
@@ -61,7 +61,7 @@ export default function PacienteLoginPage() {
         <div 
           className="absolute -bottom-48 -left-24 w-80 h-80 rounded-full blur-[100px] transition-all duration-[2500ms] delay-300"
           style={{ 
-            background: 'radial-gradient(circle, rgba(255,109,0,0.08) 0%, transparent 70%)',
+            background: 'radial-gradient(circle, rgba(154,147,139,0.08) 0%, transparent 70%)',
             opacity: mounted ? 1 : 0,
             transform: mounted ? 'scale(1)' : 'scale(0.5)',
           }}
@@ -106,7 +106,7 @@ export default function PacienteLoginPage() {
         <div 
           className="w-full bg-card-dark/80 backdrop-blur-xl rounded-3xl border border-slate-800/80 shadow-2xl shadow-black/40 overflow-hidden transition-all duration-500"
           style={{
-            borderColor: focusedInput ? 'rgba(255,109,0,0.3)' : 'rgba(30,41,59,0.8)',
+            borderColor: focusedInput ? 'rgba(154,147,139,0.3)' : 'rgba(30,41,59,0.8)',
           }}
         >
           {/* Card Header */}
@@ -139,7 +139,7 @@ export default function PacienteLoginPage() {
               <div className="relative group">
                 <span 
                   className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-lg transition-colors duration-300"
-                  style={{ color: focusedInput ? '#ff6d00' : '#64748b' }}
+                  style={{ color: focusedInput ? '#9A938B' : '#64748b' }}
                 >
                   badge
                 </span>
@@ -166,7 +166,7 @@ export default function PacienteLoginPage() {
             <button
               type="submit"
               disabled={loading || !dni}
-              className="w-full py-4 bg-gradient-to-r from-primary to-orange-600 hover:from-primary hover:to-orange-500 text-white font-bold rounded-2xl flex items-center justify-center gap-2.5 shadow-xl shadow-primary/25 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none hover:shadow-primary/40 hover:scale-[1.02] active:scale-[0.98] text-sm"
+              className="w-full py-4 bg-gradient-to-r from-primary to-primary-dark hover:from-primary hover:to-primary-dark text-white font-bold rounded-2xl flex items-center justify-center gap-2.5 shadow-xl shadow-primary/25 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none hover:shadow-primary/40 hover:scale-[1.02] active:scale-[0.98] text-sm"
             >
               {loading ? (
                 <>

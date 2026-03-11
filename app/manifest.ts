@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: 'Gestión de pacientes',
     start_url: '/',
     display: 'standalone',
-    background_color: '#ff6d00',
-    theme_color: '#ff6d00',
+    background_color: '#9A938B',
+    theme_color: '#9A938B',
     icons: [
       {
         src: '/api/icon-square',

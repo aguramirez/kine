@@ -200,7 +200,7 @@ export default function PacienteHomePage() {
             </div>
             <div className="w-full bg-slate-800 h-3 rounded-full overflow-hidden">
               <div
-                className="bg-gradient-to-r from-primary to-orange-500 h-full rounded-full transition-all duration-700 ease-out"
+                className="bg-gradient-to-r from-primary to-primary-dark h-full rounded-full transition-all duration-700 ease-out"
                 style={{ width: `${sessionProgress}%` }}
               />
             </div>
@@ -411,7 +411,7 @@ export default function PacienteHomePage() {
           className={`w-full py-4 font-bold rounded-2xl flex items-center justify-center gap-2.5 text-sm transition-all duration-300 ${
             sessionDone
               ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 cursor-default"
-              : "bg-gradient-to-r from-primary to-orange-600 text-white shadow-xl shadow-primary/25 hover:shadow-primary/40 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+              : "bg-gradient-to-r from-primary to-primary-dark text-white shadow-xl shadow-primary/25 hover:shadow-primary/40 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
           }`}
         >
           {sessionLoading ? (

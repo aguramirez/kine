@@ -54,7 +54,7 @@ export default function AdminLoginPage() {
         <div 
           className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full blur-[140px] transition-all duration-[2000ms]"
           style={{ 
-            background: 'radial-gradient(circle, rgba(255,109,0,0.12) 0%, transparent 70%)',
+            background: 'radial-gradient(circle, rgba(154,147,139,0.12) 0%, transparent 70%)',
             opacity: mounted ? 1 : 0,
             transform: mounted ? 'scale(1)' : 'scale(0.5)',
           }}
@@ -63,7 +63,7 @@ export default function AdminLoginPage() {
         <div 
           className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full blur-[100px] transition-all duration-[2500ms] delay-300"
           style={{ 
-            background: 'radial-gradient(circle, rgba(255,109,0,0.1) 0%, transparent 70%)',
+            background: 'radial-gradient(circle, rgba(154,147,139,0.1) 0%, transparent 70%)',
             opacity: mounted ? 1 : 0,
             transform: mounted ? 'scale(1)' : 'scale(0.5)',
           }}
@@ -81,7 +81,7 @@ export default function AdminLoginPage() {
         <div 
           className="absolute top-0 right-0 w-full h-full transition-opacity duration-[3000ms] delay-700"
           style={{
-            background: 'linear-gradient(135deg, rgba(255,109,0,0.03) 0%, transparent 40%)',
+            background: 'linear-gradient(135deg, rgba(154,147,139,0.03) 0%, transparent 40%)',
             opacity: mounted ? 1 : 0,
           }}
         />
@@ -106,7 +106,7 @@ export default function AdminLoginPage() {
 
         {/* Logo */}
         <div className="mb-6 relative">
-          <div className="w-20 h-20 bg-gradient-to-br from-primary to-orange-600 rounded-3xl flex items-center justify-center shadow-2xl shadow-primary/30 -rotate-3 hover:rotate-0 transition-transform duration-500">
+          <div className="w-20 h-20 bg-gradient-to-br from-primary to-primary-dark rounded-3xl flex items-center justify-center shadow-2xl shadow-primary/30 -rotate-3 hover:rotate-0 transition-transform duration-500">
             <Logo className="w-12 h-12 text-white drop-shadow-lg" />
           </div>
           <div className="absolute -inset-2 rounded-3xl bg-primary/10 blur-xl -z-10 animate-pulse" />
@@ -124,7 +124,7 @@ export default function AdminLoginPage() {
         <div 
           className="w-full bg-card-dark/80 backdrop-blur-xl rounded-3xl border border-slate-800/80 shadow-2xl shadow-black/40 overflow-hidden transition-all duration-500"
           style={{
-            borderColor: focusedField ? 'rgba(255,109,0,0.25)' : 'rgba(30,41,59,0.8)',
+            borderColor: focusedField ? 'rgba(154,147,139,0.25)' : 'rgba(30,41,59,0.8)',
           }}
         >
           {/* Card Header */}
@@ -160,7 +160,7 @@ export default function AdminLoginPage() {
               <div className="relative group">
                 <span 
                   className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-lg transition-colors duration-300"
-                  style={{ color: focusedField === 'username' ? '#ff6d00' : '#64748b' }}
+                  style={{ color: focusedField === 'username' ? '#9A938B' : '#64748b' }}
                 >
                   person
                 </span>
@@ -189,7 +189,7 @@ export default function AdminLoginPage() {
               <div className="relative group">
                 <span 
                   className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-lg transition-colors duration-300"
-                  style={{ color: focusedField === 'password' ? '#ff6d00' : '#64748b' }}
+                  style={{ color: focusedField === 'password' ? '#9A938B' : '#64748b' }}
                 >
                   lock
                 </span>
@@ -224,7 +224,7 @@ export default function AdminLoginPage() {
             <button
               type="submit"
               disabled={loading || !username || !password}
-              className="w-full py-4 bg-gradient-to-r from-primary to-orange-600 hover:from-primary hover:to-orange-500 text-white font-bold rounded-2xl flex items-center justify-center gap-2.5 shadow-xl shadow-primary/25 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none hover:shadow-primary/40 hover:scale-[1.02] active:scale-[0.98] text-sm"
+              className="w-full py-4 bg-gradient-to-r from-primary to-primary-dark hover:from-primary hover:to-primary-dark text-white font-bold rounded-2xl flex items-center justify-center gap-2.5 shadow-xl shadow-primary/25 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none hover:shadow-primary/40 hover:scale-[1.02] active:scale-[0.98] text-sm"
             >
               {loading ? (
                 <>
