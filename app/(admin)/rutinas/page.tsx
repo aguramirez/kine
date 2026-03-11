@@ -434,14 +434,14 @@ export default function RutinasPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-6 md:mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 mb-6 md:mb-8">
           <div className="bg-white dark:bg-card-dark p-4 md:p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-3 md:gap-4 hover:border-primary/50 transition-all">
             <div className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center bg-primary/10 rounded-xl text-primary flex-shrink-0">
               <span className="material-symbols-outlined text-xl md:text-2xl">assignment</span>
             </div>
-            <div>
-              <p className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">{rutinas.length}</p>
-              <p className="text-[10px] md:text-xs font-medium text-slate-500 dark:text-slate-400">Total Rutinas</p>
+            <div className="min-w-0">
+              <p className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white truncate">{rutinas.length}</p>
+              <p className="text-[10px] md:text-xs font-medium text-slate-500 dark:text-slate-400 truncate">Total Rutinas</p>
             </div>
           </div>
           <button
@@ -498,7 +498,7 @@ export default function RutinasPage() {
               >
                 {/* Card header */}
                 <div className="p-4 md:p-5 pb-3">
-                  <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-start justify-between mb-3 gap-2">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
                         <span className="material-symbols-outlined text-lg md:text-xl">assignment</span>
@@ -510,13 +510,13 @@ export default function RutinasPage() {
                         </p>
                       </div>
                     </div>
-                    {/* Actions - always visible on mobile */}
-                    <div className="flex gap-0.5 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex-shrink-0">
-                      <button onClick={() => openAssign(r)} className="p-1.5 text-slate-400 hover:text-emerald-500 hover:bg-emerald-500/10 rounded-lg transition-all" title="Asignar pacientes">
-                        <span className="material-symbols-outlined text-[18px]">person_add</span>
+                    {/* Actions */}
+                    <div className="flex gap-0.5 mt-0 md:mt-0 transition-opacity flex-shrink-0">
+                      <button onClick={() => openAssign(r)} className="p-1.5 md:p-2 text-slate-400 hover:text-emerald-500 hover:bg-emerald-500/10 rounded-lg transition-all" title="Asignar pacientes">
+                        <span className="material-symbols-outlined text-[18px] md:text-[20px]">person_add</span>
                       </button>
-                      <button onClick={() => openView(r)} className="p-1.5 text-slate-400 hover:text-blue-500 hover:bg-blue-500/10 rounded-lg transition-all" title="Ver">
-                        <span className="material-symbols-outlined text-[18px]">visibility</span>
+                      <button onClick={() => openView(r)} className="p-1.5 md:p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-500/10 rounded-lg transition-all" title="Ver">
+                        <span className="material-symbols-outlined text-[18px] md:text-[20px]">visibility</span>
                       </button>
                     </div>
                   </div>

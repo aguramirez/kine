@@ -260,7 +260,7 @@ export default function EjerciciosPage() {
         </div>
 
         {/* Stats summary */}
-        <div className="grid grid-cols-2 gap-3 md:gap-4 mb-6 md:mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 mb-6 md:mb-8">
           <div className="bg-white dark:bg-card-dark p-4 md:p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-3 md:gap-4 hover:border-primary/50 transition-all">
             <div className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center bg-primary/10 rounded-xl text-primary flex-shrink-0">
               <span className="material-symbols-outlined text-xl md:text-2xl">fitness_center</span>
@@ -325,8 +325,9 @@ export default function EjerciciosPage() {
           <>
             {/* Desktop table */}
             <div className="hidden md:block bg-white dark:bg-card-dark rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-              <table className="w-full text-left border-collapse">
-                <thead>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse min-w-[800px]">
+                  <thead>
                   <tr className="bg-slate-50 dark:bg-white/5 text-slate-500 text-xs font-bold uppercase tracking-wider">
                     <th className="px-6 py-4">Ejercicio</th>
                     <th className="px-6 py-4">Descripción</th>
@@ -393,6 +394,7 @@ export default function EjerciciosPage() {
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
 
             {/* Mobile list */}

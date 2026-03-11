@@ -78,11 +78,11 @@ export default function AdminDashboardPage() {
         {/* Pacientes Activos */}
         <div className="bg-white dark:bg-card-dark p-5 md:p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm group hover:border-primary/50 transition-all">
           <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 truncate">
                 Pacientes Activos
               </p>
-              <h3 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mt-1">
+              <h3 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mt-1 truncate">
                 {data?.activePacientes ?? 0}
               </h3>
             </div>
@@ -101,11 +101,11 @@ export default function AdminDashboardPage() {
         {/* Sesiones Hoy */}
         <div className="bg-white dark:bg-card-dark p-5 md:p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm group hover:border-primary/50 transition-all">
           <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 truncate">
                 Sesiones Hoy
               </p>
-              <h3 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mt-1">
+              <h3 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mt-1 truncate">
                 {String(data?.sessionsToday ?? 0).padStart(2, "0")}
               </h3>
             </div>
@@ -153,8 +153,8 @@ export default function AdminDashboardPage() {
         ) : (
           <>
             {/* Desktop table */}
-            <div className="hidden md:block">
-              <table className="w-full text-left border-collapse">
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left border-collapse min-w-[800px]">
                 <thead>
                   <tr className="bg-slate-50 dark:bg-white/5 text-slate-500 text-xs font-bold uppercase">
                     <th className="px-6 py-4">Paciente</th>

@@ -348,14 +348,14 @@ export default function PacientesPage() {
           </p> */}
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
           <div className="bg-white dark:bg-card-dark p-4 md:p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-3 md:gap-4 hover:border-primary/50 transition-all">
             <div className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center bg-primary/10 rounded-xl text-primary flex-shrink-0">
               <span className="material-symbols-outlined text-xl md:text-2xl">groups</span>
             </div>
-            <div>
-              <p className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">{pacientes.length}</p>
-              <p className="text-[10px] md:text-xs font-medium text-slate-500 dark:text-slate-400">Total</p>
+            <div className="min-w-0">
+              <p className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white truncate">{pacientes.length}</p>
+              <p className="text-[10px] md:text-xs font-medium text-slate-500 dark:text-slate-400 truncate">Total</p>
             </div>
           </div>
           
@@ -401,9 +401,9 @@ export default function PacientesPage() {
             <div className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center bg-blue-500/10 rounded-xl text-blue-500 flex-shrink-0">
               <span className="material-symbols-outlined text-xl md:text-2xl">event</span>
             </div>
-            <div>
-              <p className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">{pacientes.reduce((a, p) => a + p.sessionsCount, 0)}</p>
-              <p className="text-[10px] md:text-xs font-medium text-slate-500 dark:text-slate-400">Sesiones</p>
+            <div className="min-w-0">
+              <p className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white truncate">{pacientes.reduce((a, p) => a + p.sessionsCount, 0)}</p>
+              <p className="text-[10px] md:text-xs font-medium text-slate-500 dark:text-slate-400 truncate">Sesiones</p>
             </div>
           </div>
         </div>
@@ -430,8 +430,9 @@ export default function PacientesPage() {
           <>
             {/* Desktop table */}
             <div className="hidden md:block bg-white dark:bg-card-dark rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-              <table className="w-full text-left border-collapse">
-                <thead>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse min-w-[800px]">
+                  <thead>
                   <tr className="bg-slate-50 dark:bg-white/5 text-slate-500 text-xs font-bold uppercase tracking-wider">
                     <th className="px-6 py-4">Paciente</th>
                     <th className="px-6 py-4">DNI</th>
@@ -481,6 +482,7 @@ export default function PacientesPage() {
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
 
             {/* Mobile list */}
