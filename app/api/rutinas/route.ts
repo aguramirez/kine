@@ -1,9 +1,21 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const { searchParams } = new URL(req.url);
+    const adminId = searchParams.get('adminId');
+    
+    // Si adminId está presente, traemos rutinas sin paciente o las de sus pacientes
+    const where = adminId ? {
+      OR: [
+        { pacienteId: null },
+        { paciente: { adminId } }
+      ]
+    } : {};
+
     const rutinas = await prisma.rutina.findMany({
+      where,
       include: {
         dias: {
           include: {

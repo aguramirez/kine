@@ -15,6 +15,7 @@ model Admin {
   password  String
   username  String   @unique
   createdAt DateTime @default(now())
+  pacientes Paciente[]
 }
 
 model Paciente {
@@ -42,6 +43,8 @@ model Paciente {
   spadiEnd         Json?     @default("{}")
   createdAt        DateTime  @default(now())
   rutinas          Rutina[]
+  adminId          String?
+  admin            Admin?    @relation(fields: [adminId], references: [id])
 }
 
 model Ejercicio {

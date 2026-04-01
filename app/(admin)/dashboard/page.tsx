@@ -28,7 +28,10 @@ export default function AdminDashboardPage() {
 
   const fetchDashboard = useCallback(async () => {
     try {
-      const res = await fetch("/api/dashboard");
+      const adminStr = localStorage.getItem("admin");
+      const adminId = adminStr ? JSON.parse(adminStr).id : "";
+      const url = adminId ? `/api/dashboard?adminId=${adminId}` : "/api/dashboard";
+      const res = await fetch(url);
       if (res.ok) setData(await res.json());
     } catch {
       /* silent */

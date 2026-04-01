@@ -80,7 +80,9 @@ export default function RutinasPage() {
   /* ── Fetch ── */
   const fetchRutinas = useCallback(async () => {
     try {
-      const res = await fetch("/api/rutinas");
+      const adminStr = localStorage.getItem("admin");
+      const adminId = adminStr ? JSON.parse(adminStr).id : "";
+      const res = await fetch(`/api/rutinas${adminId ? `?adminId=${adminId}` : ""}`);
       const data = await res.json();
       if (res.ok) setRutinas(data);
     } catch {
@@ -248,7 +250,9 @@ export default function RutinasPage() {
     if (allPacientes.length === 0) {
       setAssignLoading(true);
       try {
-        const res = await fetch("/api/pacientes");
+        const adminStr = localStorage.getItem("admin");
+        const adminId = adminStr ? JSON.parse(adminStr).id : "";
+        const res = await fetch(`/api/pacientes${adminId ? `?adminId=${adminId}` : ""}`);
         if (res.ok) setAllPacientes(await res.json());
       } catch {
         showToast("Error al cargar pacientes", "error");
@@ -336,9 +340,12 @@ export default function RutinasPage() {
     setAssignRutina(r);
     setAssignLoading(true);
     try {
+      const adminStr = localStorage.getItem("admin");
+      const adminId = adminStr ? JSON.parse(adminStr).id : "";
+
       // Fetch patients and assigned IDs in parallel
       const [pacientesRes, assignedRes] = await Promise.all([
-        fetch("/api/pacientes"),
+        fetch(`/api/pacientes${adminId ? `?adminId=${adminId}` : ""}`),
         fetch(`/api/rutinas/${r.id}/pacientes`),
       ]);
       if (pacientesRes.ok) {
@@ -810,50 +817,53 @@ export default function RutinasPage() {
                                 {dia.ejercicios.map((ex, eIdx) => (
                                   <div key={eIdx} className="flex flex-wrap items-center gap-2 p-3 bg-white dark:bg-card-dark rounded-xl border border-slate-200 dark:border-slate-700">
                                     {/* Exercise select */}
-                                    <select
-                                      value={ex.exerciseId}
-                                      onChange={(e) => updateExercise(dIdx, eIdx, "exerciseId", e.target.value)}
-                                      className="flex-1 min-w-[180px] px-3 py-2.5 bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-slate-700 rounded-lg text-sm dark:text-white outline-none focus:ring-2 focus:ring-primary/40 appearance-none cursor-pointer"
-                                    >
-                                      <option value="">Seleccionar ejercicio...</option>
-                                      {ejerciciosCatalog.map((ej) => (
-                                        <option key={ej.id} value={ej.id}>{ej.name}</option>
-                                      ))}
-                                    </select>
+                                    <div className="relative flex-1 min-w-[200px]">
+                                      <select
+                                        value={ex.exerciseId}
+                                        onChange={(e) => updateExercise(dIdx, eIdx, "exerciseId", e.target.value)}
+                                        className="w-full pl-3.5 pr-10 py-2.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-primary/50 appearance-none cursor-pointer transition-all shadow-sm hover:border-primary/40 focus:border-primary/50"
+                                      >
+                                        <option value="" className="bg-white dark:bg-slate-800 text-slate-500 italic">Seleccionar ejercicio...</option>
+                                        {ejerciciosCatalog.map((ej) => (
+                                          <option key={ej.id} value={ej.id} className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium py-1">{ej.name}</option>
+                                        ))}
+                                      </select>
+                                      <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-xl">expand_more</span>
+                                    </div>
 
                                     {/* Sets */}
-                                    <div className="flex items-center gap-1.5">
-                                      <label className="text-[10px] font-bold text-slate-400 uppercase">Sets</label>
+                                    <div className="flex flex-col items-center gap-1">
+                                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Sets</label>
                                       <input
                                         type="number"
                                         min={1}
                                         value={ex.sets}
                                         onChange={(e) => updateExercise(dIdx, eIdx, "sets", e.target.value)}
-                                        className="w-16 px-2 py-2.5 bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-center font-bold dark:text-white outline-none focus:ring-2 focus:ring-primary/40"
+                                        className="w-16 px-2 py-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-center font-bold text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-primary/50 transition-all shadow-sm hover:border-primary/30"
                                       />
                                     </div>
 
                                     {/* Reps */}
-                                    <div className="flex items-center gap-1.5">
-                                      <label className="text-[10px] font-bold text-slate-400 uppercase">Reps</label>
+                                    <div className="flex flex-col items-center gap-1">
+                                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Reps</label>
                                       <input
                                         type="number"
                                         min={1}
                                         value={ex.reps}
                                         onChange={(e) => updateExercise(dIdx, eIdx, "reps", e.target.value)}
-                                        className="w-16 px-2 py-2.5 bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-center font-bold dark:text-white outline-none focus:ring-2 focus:ring-primary/40"
+                                        className="w-16 px-2 py-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-center font-bold text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-primary/50 transition-all shadow-sm hover:border-primary/30"
                                       />
                                     </div>
 
                                     {/* Time */}
-                                    <div className="flex items-center gap-1.5">
-                                      <label className="text-[10px] font-bold text-slate-400 uppercase">Tiempo</label>
+                                    <div className="flex flex-col items-center gap-1">
+                                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Tiempo</label>
                                       <input
                                         type="text"
                                         value={ex.time}
                                         onChange={(e) => updateExercise(dIdx, eIdx, "time", e.target.value)}
                                         placeholder="45s"
-                                        className="w-20 px-2 py-2.5 bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-center font-bold dark:text-white outline-none focus:ring-2 focus:ring-primary/40 placeholder:text-slate-400 placeholder:font-normal"
+                                        className="w-20 px-2 py-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-center font-bold text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-primary/50 placeholder:text-slate-400 placeholder:font-normal transition-all shadow-sm hover:border-primary/30"
                                       />
                                     </div>
 

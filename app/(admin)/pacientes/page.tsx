@@ -141,7 +141,10 @@ export default function PacientesPage() {
   /* ── Fetch ── */
   const fetchPacientes = useCallback(async () => {
     try {
-      const res = await fetch("/api/pacientes");
+      const adminStr = localStorage.getItem("admin");
+      const adminId = adminStr ? JSON.parse(adminStr).id : "";
+      const url = adminId ? `/api/pacientes?adminId=${adminId}` : "/api/pacientes";
+      const res = await fetch(url);
       if (res.ok) setPacientes(await res.json());
     } catch { showToast("Error al cargar pacientes", "error"); }
     finally { setLoading(false); }
@@ -245,6 +248,9 @@ export default function PacientesPage() {
     setSaving(true);
     setFormError("");
 
+    const adminStr = localStorage.getItem("admin");
+    const adminObj = adminStr ? JSON.parse(adminStr) : null;
+
     const body = {
       fullName: form.fullName.trim(),
       dni: form.dni.trim(),
@@ -262,6 +268,7 @@ export default function PacientesPage() {
       diagnoses: form.diagnoses,
       spadi: calculateSpadiPercents(formSpadi),
       spadiEnd: calculateSpadiPercents(formSpadiEnd),
+      adminId: adminObj ? adminObj.id : null,
     };
 
     try {

@@ -34,7 +34,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ 
       message: 'Login exitoso', 
       token, 
-      admin: { id: admin.id, fullName: admin.fullName } 
+      admin: { id: admin.id, fullName: admin.fullName, username: admin.username } 
     }, { status: 200 });
   } catch (error) {
     console.error('Login Admin Error:', error);

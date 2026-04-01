@@ -1,9 +1,14 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const { searchParams } = new URL(req.url);
+    const adminId = searchParams.get('adminId');
+    const where = adminId ? { adminId } : {};
+
     const pacientes = await prisma.paciente.findMany({
+      where,
       include: {
         rutinas: {
           include: {
@@ -57,6 +62,7 @@ export async function POST(req: Request) {
         totalInvoiced,
         totalPaid,
         difference,
+        adminId: data.adminId || null,
       }
     });
 

@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import Logo from "@/components/Logo";
 
 const navItems = [
@@ -20,6 +21,22 @@ interface SidebarAdminProps {
 export default function SidebarAdmin({ isOpen, onClose }: SidebarAdminProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const [adminName, setAdminName] = useState("");
+  const [adminUsername, setAdminUsername] = useState("");
+  const [imageError, setImageError] = useState(false);
+
+  useEffect(() => {
+    const adminStr = localStorage.getItem("admin");
+    if (adminStr) {
+      const adminObj = JSON.parse(adminStr);
+      setAdminName(adminObj.fullName || "Admin");
+      setAdminUsername(adminObj.username || adminObj.fullName?.split(" ")[0].toLowerCase() || "admin");
+    }
+  }, []);
+
+  const adminInitials = adminName
+    ? adminName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
+    : "AD";
 
   const isActive = (href: string) =>
     pathname === href || pathname?.startsWith(href + "/");
@@ -74,16 +91,21 @@ export default function SidebarAdmin({ isOpen, onClose }: SidebarAdminProps) {
         {/* User info */}
         <div className="px-6 py-4 flex items-center gap-3 border-b border-slate-200 dark:border-slate-800">
           <div className="size-10 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30 overflow-hidden relative">
-            <Image
-              fill
-              className="object-cover"
-              alt="Lic. Oscar Robles"
-              src="/oscar.jpg"
-            />
+            {!imageError && adminUsername ? (
+              <Image
+                fill
+                className="object-cover"
+                alt={`Lic. ${adminName}`}
+                src={`/${adminUsername}.jpg`}
+                onError={() => setImageError(true)}
+              />
+            ) : (
+              <span className="text-primary font-bold">{adminInitials}</span>
+            )}
           </div>
           <div className="flex flex-col">
             <h1 className="text-sm font-semibold text-slate-900 dark:text-white leading-none">
-              Lic. Oscar Robles
+              Lic. {adminName || "Cargando..."}
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
               Administrador
