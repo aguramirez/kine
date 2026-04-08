@@ -90,7 +90,7 @@ export default function SidebarAdmin({ isOpen, onClose }: SidebarAdminProps) {
 
         {/* User info */}
         <div className="px-6 py-4 flex items-center gap-3 border-b border-slate-200 dark:border-slate-800">
-          <div className="size-10 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30 overflow-hidden relative">
+          <div className="size-14 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30 overflow-hidden relative">
             {!imageError && adminUsername ? (
               <Image
                 fill
