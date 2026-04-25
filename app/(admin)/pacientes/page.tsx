@@ -5,6 +5,7 @@ import Logo from "@/components/Logo";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import HistoriaClinicaTab from "./HistoriaClinicaTab";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 /* ── Types ── */
 interface RutinaEjercicio {
@@ -99,6 +100,7 @@ const DEFAULT_FORM = {
 };
 
 export default function PacientesPage() {
+  const router = useRouter();
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
