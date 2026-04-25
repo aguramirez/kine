@@ -39,6 +39,7 @@ export async function PUT(
       data: {
         name: data.name,
         description: data.description,
+        categories: data.categories,
         videoUrl: data.videoUrl ?? undefined,
       },
     });

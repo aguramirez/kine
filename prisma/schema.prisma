@@ -45,12 +45,14 @@ model Paciente {
   rutinas          Rutina[]
   adminId          String?
   admin            Admin?    @relation(fields: [adminId], references: [id])
+  notasClinicas    NotaClinica[]
 }
 
 model Ejercicio {
   id          String   @id @default(uuid())
   name        String
   description String
+  categories  String[]
   videoUrl    String?
   createdAt   DateTime @default(now())
 }
@@ -84,3 +86,14 @@ model EjercicioEnDia {
   time       String?
   createdAt  DateTime  @default(now())
 }
+
+model NotaClinica {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  photoUrl    String?
+  pacienteId  String
+  paciente    Paciente @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+}
+

@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import Logo from "@/components/Logo";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import HistoriaClinicaTab from "./HistoriaClinicaTab";
+import Link from "next/link";
 
 /* ── Types ── */
 interface RutinaEjercicio {
@@ -106,7 +108,7 @@ export default function PacientesPage() {
   const [modalMode, setModalMode] = useState<ModalMode>(null);
   const [selected, setSelected] = useState<Paciente | null>(null);
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState<"info" | "diagnosticos" | "spadi" | "spadiEnd" | "chart">("info");
+  const [activeTab, setActiveTab] = useState<"info" | "diagnosticos" | "historia" | "spadi" | "spadiEnd" | "chart">("info");
 
   // Form
   const [form, setForm] = useState(DEFAULT_FORM);
@@ -317,6 +319,37 @@ export default function PacientesPage() {
       fetchPacientes();
     } catch { showToast("Error de conexión", "error"); }
     finally { setToggling(false); }
+  };
+
+  /* ── Rutina Actions ── */
+  const handleDesasignarRutina = async () => {
+    if (!rutinaDetail) return;
+    if (!confirm("¿Estás seguro de desasignar esta rutina? No se borrará del sistema, pero el paciente ya no podrá verla.")) return;
+    
+    try {
+      const res = await fetch(`/api/rutinas/${rutinaDetail.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: rutinaDetail.name,
+          description: rutinaDetail.description,
+          pacienteId: null, // This removes the assignment
+          dias: rutinaDetail.dias
+        }),
+      });
+      if (!res.ok) throw new Error();
+      
+      showToast("Rutina desasignada correctamente", "success");
+      setRutinaDetail(null);
+      fetchPacientes(); // Refresh patients to update routine counts
+    } catch {
+      showToast("Error al desasignar la rutina", "error");
+    }
+  };
+
+  const handleEditRutina = () => {
+    if (!rutinaDetail) return;
+    router.push(`/rutinas?edit=${rutinaDetail.id}`);
   };
 
   /* ── Helpers ── */
@@ -578,9 +611,9 @@ export default function PacientesPage() {
                 </div>
                 {/* Tabs */}
                 <div className="flex border-b border-slate-200 dark:border-slate-800 flex-shrink-0 overflow-x-auto no-scrollbar">
-                  {(["info", "diagnosticos", "spadi", "spadiEnd", "chart"] as const).map((t) => (
+                  {(["info", "diagnosticos", "historia", "spadi", "spadiEnd", "chart"] as const).map((t) => (
                     <button key={t} onClick={() => setActiveTab(t)} className={`flex-1 min-w-[max-content] px-4 py-3 text-xs font-bold uppercase tracking-wider transition-all relative ${activeTab === t ? "text-primary" : "text-slate-400 hover:text-slate-600"}`}>
-                      {t === "info" ? "Info" : t === "diagnosticos" ? "Diag" : t === "spadi" ? "Inicio" : t === "spadiEnd" ? "Fin" : "Gráfico"}
+                      {t === "info" ? "Info" : t === "diagnosticos" ? "Diag" : t === "historia" ? "Historia Clinica" : t === "spadi" ? "Inicio" : t === "spadiEnd" ? "Fin" : "Gráfico"}
                       {activeTab === t && <div className="absolute bottom-0 left-4 right-4 h-0.5 bg-primary rounded-full" />}
                     </button>
                   ))}
@@ -592,7 +625,15 @@ export default function PacientesPage() {
                       <div className="p-3 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-slate-800">
                         <p className="text-[10px] text-slate-400 uppercase font-bold mb-2">Rutinas Asignadas</p>
                         {(!selected.rutinas || selected.rutinas.length === 0) ? (
-                          <p className="text-xs text-slate-400 italic">Sin rutinas asignadas</p>
+                          <div className="flex flex-col items-center justify-center py-6 bg-white dark:bg-card-dark rounded-xl border border-slate-200 dark:border-slate-700">
+                            <span className="material-symbols-outlined text-4xl text-slate-300 dark:text-slate-600 mb-2">assignment_add</span>
+                            <p className="text-sm font-bold text-slate-900 dark:text-white mb-1">Sin rutina asignada</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">Este paciente no tiene ninguna rutina de rehabilitación activa.</p>
+                            <Link href={`/rutinas?pacienteId=${selected.id}`} className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg text-xs font-bold transition-all shadow-md shadow-primary/20 flex items-center gap-1.5">
+                              <span className="material-symbols-outlined text-[16px]">add</span>
+                              Crear rutina
+                            </Link>
+                          </div>
                         ) : (
                           <div className="space-y-1.5">
                             {selected.rutinas.map((r) => (
@@ -611,6 +652,10 @@ export default function PacientesPage() {
                                 <span className="material-symbols-outlined text-slate-400 group-hover:text-primary text-sm transition-colors">chevron_right</span>
                               </button>
                             ))}
+                            <Link href={`/rutinas?pacienteId=${selected.id}`} className="w-full mt-2 py-2 border border-dashed border-slate-300 dark:border-slate-700 rounded-lg text-xs font-bold text-slate-500 dark:text-slate-400 hover:border-primary hover:text-primary transition-all flex items-center justify-center gap-1.5 bg-white/50 dark:bg-card-dark/50">
+                              <span className="material-symbols-outlined text-sm">add</span>
+                              Asignar otra rutina
+                            </Link>
                           </div>
                         )}
                       </div>
@@ -658,6 +703,9 @@ export default function PacientesPage() {
                         </div>
                       )}
                     </div>
+                  )}
+                  {activeTab === "historia" && (
+                    <HistoriaClinicaTab pacienteId={selected.id} />
                   )}
                   {activeTab === "spadi" && (
                     <div className="space-y-3 pb-4">
@@ -763,9 +811,9 @@ export default function PacientesPage() {
 
                 {/* Tabs */}
                 <div className="flex border-b border-slate-200 dark:border-slate-800 flex-shrink-0 overflow-x-auto no-scrollbar">
-                  {(["info", "diagnosticos", "spadi", "spadiEnd", "chart"] as const).map((t) => (
+                  {(["info", "diagnosticos", "historia", "spadi", "spadiEnd", "chart"] as const).map((t) => (
                     <button key={t} onClick={() => setActiveTab(t)} className={`flex-1 min-w-[max-content] px-4 py-3 text-xs font-bold uppercase tracking-wider transition-all relative ${activeTab === t ? "text-primary" : "text-slate-400 hover:text-slate-600"}`}>
-                      {t === "info" ? "Info" : t === "diagnosticos" ? "Diag" : t === "spadi" ? "Inicio" : t === "spadiEnd" ? "Fin" : "Gráfico"}
+                      {t === "info" ? "Info" : t === "diagnosticos" ? "Diag" : t === "historia" ? "Historia Clinica" : t === "spadi" ? "Inicio" : t === "spadiEnd" ? "Fin" : "Gráfico"}
                       {activeTab === t && <div className="absolute bottom-0 left-4 right-4 h-0.5 bg-primary rounded-full" />}
                     </button>
                   ))}
@@ -904,6 +952,10 @@ export default function PacientesPage() {
                         {form.diagnoses.length === 0 && <p className="text-xs text-slate-400 italic">No hay diagnósticos agregados</p>}
                       </div>
                     </div>
+                  )}
+
+                  {activeTab === "historia" && (
+                    <HistoriaClinicaTab pacienteId={selected?.id || ""} />
                   )}
 
                   {activeTab === "spadi" && (() => {
@@ -1147,6 +1199,24 @@ export default function PacientesPage() {
                   </div>
                 ))
               )}
+            </div>
+
+            {/* Modal Footer with Actions */}
+            <div className="p-5 md:p-6 border-t border-slate-200 dark:border-slate-800 flex gap-3 flex-shrink-0 bg-slate-50/50 dark:bg-card-dark">
+              <button 
+                onClick={handleDesasignarRutina}
+                className="flex-1 py-3 text-red-500 bg-red-500/10 hover:bg-red-500/20 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2"
+              >
+                <span className="material-symbols-outlined text-lg">person_remove</span>
+                Desasignar del paciente
+              </button>
+              <button 
+                onClick={handleEditRutina}
+                className="flex-1 py-3 bg-primary hover:bg-primary/90 text-white rounded-xl text-sm font-bold shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2"
+              >
+                <span className="material-symbols-outlined text-lg">edit</span>
+                Editar Rutina
+              </button>
             </div>
           </div>
         </div>

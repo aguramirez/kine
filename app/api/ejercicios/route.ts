@@ -25,6 +25,7 @@ export async function POST(req: Request) {
       data: {
         name: data.name,
         description: data.description,
+        categories: data.categories || [],
         videoUrl: data.videoUrl || null // Acá se guardará la URL de Cloudinary a futuro
       }
     });

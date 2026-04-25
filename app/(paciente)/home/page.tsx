@@ -52,7 +52,7 @@ export default function PacienteHomePage() {
   const [sessionLoading, setSessionLoading] = useState(false);
   const [sessionDone, setSessionDone] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
-  const [playingVideo, setPlayingVideo] = useState<{url: string; name: string} | null>(null);
+  const [viewingExercise, setViewingExercise] = useState<EjercicioEnDia | null>(null);
 
   const showToast = (message: string, type: "success" | "error") => {
     setToast({ message, type });
@@ -95,7 +95,7 @@ export default function PacienteHomePage() {
 
   useEffect(() => {
     const handlePopState = () => {
-      setPlayingVideo((prev) => {
+      setViewingExercise((prev) => {
         if (prev) return null;
         return prev;
       });
@@ -104,16 +104,16 @@ export default function PacienteHomePage() {
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
-  const openVideo = (url: string, name: string) => {
-    window.history.pushState({ videoModal: true }, "");
-    setPlayingVideo({ url, name });
+  const openExerciseDetail = (ej: EjercicioEnDia) => {
+    window.history.pushState({ exerciseModal: true }, "");
+    setViewingExercise(ej);
   };
 
-  const closeVideo = () => {
-    if (window.history.state?.videoModal) {
+  const closeExerciseDetail = () => {
+    if (window.history.state?.exerciseModal) {
       window.history.back(); // Triggers popstate
     } else {
-      setPlayingVideo(null);
+      setViewingExercise(null);
     }
   };
 
@@ -331,59 +331,56 @@ export default function PacienteHomePage() {
                               </p>
                             ) : (
                               currentDay.ejercicios.map((ej) => (
-                                <div
+                                <button
                                   key={ej.id}
-                                  className="flex items-center gap-3 p-3 bg-background-dark/50 border border-slate-800 rounded-xl"
+                                  onClick={() => openExerciseDetail(ej)}
+                                  className="w-full flex items-center gap-3 p-3 bg-background-dark/50 hover:bg-white/[0.03] transition-colors border border-slate-800 rounded-xl text-left group"
                                 >
                                   {/* Video thumbnail or icon */}
-                                  <div className="w-14 h-14 rounded-xl bg-slate-800 flex-shrink-0 flex items-center justify-center overflow-hidden relative">
+                                  <div className="w-14 h-14 rounded-xl bg-slate-800 flex-shrink-0 flex items-center justify-center overflow-hidden relative border border-slate-700">
                                     {ej.exercise?.videoUrl ? (
-                                      <video
-                                        src={ej.exercise.videoUrl}
-                                        className="w-full h-full object-cover"
-                                        muted
-                                        playsInline
-                                        preload="metadata"
-                                      />
+                                      <>
+                                        <video
+                                          src={ej.exercise.videoUrl}
+                                          className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity"
+                                          muted
+                                          playsInline
+                                          preload="metadata"
+                                        />
+                                        <div className="absolute inset-0 flex items-center justify-center">
+                                          <div className="w-6 h-6 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
+                                            <span className="material-symbols-outlined text-white text-[14px]">play_arrow</span>
+                                          </div>
+                                        </div>
+                                      </>
                                     ) : (
-                                      <span className="material-symbols-outlined text-slate-600 text-2xl">
-                                        exercise
+                                      <span className="material-symbols-outlined text-slate-500 text-2xl">
+                                        fitness_center
                                       </span>
                                     )}
                                   </div>
                                   <div className="flex-1 min-w-0">
-                                    <h4 className="text-sm font-bold text-white truncate">
+                                    <h4 className="text-sm font-bold text-white truncate group-hover:text-primary transition-colors">
                                       {ej.exercise?.name || "Ejercicio"}
                                     </h4>
-                                    <div className="flex items-center gap-2 mt-0.5">
-                                      <span className="text-[11px] text-slate-400 font-medium">
-                                        {ej.sets} series
+                                    <div className="flex items-center gap-2 mt-1">
+                                      <span className="text-[11px] text-slate-400 font-medium bg-slate-800/50 px-1.5 py-0.5 rounded">
+                                        {ej.sets} <span className="text-slate-500">sets</span>
                                       </span>
-                                      <span className="w-1 h-1 rounded-full bg-slate-700" />
-                                      <span className="text-[11px] text-slate-400 font-medium">
-                                        {ej.reps} reps
+                                      <span className="text-[11px] text-slate-400 font-medium bg-slate-800/50 px-1.5 py-0.5 rounded">
+                                        {ej.reps} <span className="text-slate-500">reps</span>
                                       </span>
                                       {ej.time && (
-                                        <>
-                                          <span className="w-1 h-1 rounded-full bg-slate-700" />
-                                          <span className="text-[11px] text-primary font-medium">
-                                            {ej.time}
-                                          </span>
-                                        </>
+                                        <span className="text-[11px] text-primary font-bold bg-primary/10 px-1.5 py-0.5 rounded">
+                                          {ej.time}
+                                        </span>
                                       )}
                                     </div>
                                   </div>
-                                  {ej.exercise?.videoUrl && (
-                                    <button
-                                      onClick={() => openVideo(ej.exercise!.videoUrl!, ej.exercise!.name)}
-                                      className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 hover:bg-primary/20 transition-all"
-                                    >
-                                      <span className="material-symbols-outlined text-primary text-lg">
-                                        play_arrow
-                                      </span>
-                                    </button>
-                                  )}
-                                </div>
+                                  <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-slate-600 group-hover:text-primary transition-colors">
+                                    <span className="material-symbols-outlined">chevron_right</span>
+                                  </div>
+                                </button>
                               ))
                             )}
                           </div>
@@ -462,28 +459,79 @@ export default function PacienteHomePage() {
         </div>
       )}
 
-      {/* Video Modal */}
-      {playingVideo && (
-        <div className="fixed inset-0 z-[100] flex flex-col bg-black animate-[fadeIn_0.2s_ease-out]">
-          <div className="flex items-center justify-between p-4 bg-gradient-to-b from-black/80 to-transparent absolute top-0 w-full z-10">
-            <h3 className="text-white font-bold text-lg drop-shadow-md truncate pr-4">{playingVideo.name}</h3>
+      {/* Exercise Modal */}
+      {viewingExercise && (
+        <div className="fixed inset-0 z-[100] flex flex-col bg-card-dark animate-[fadeIn_0.2s_ease-out]">
+          {/* Header */}
+          <div className="flex items-center justify-between p-4 border-b border-slate-800 bg-background-dark shrink-0 shadow-sm z-10 relative">
+            <h3 className="text-white font-bold text-lg truncate pr-4">{viewingExercise.exercise?.name || "Detalle"}</h3>
             <button 
-              onClick={closeVideo} 
-              className="w-10 h-10 rounded-full bg-black/40 flex items-center justify-center text-white backdrop-blur-md border border-white/10 flex-shrink-0 hover:bg-white/10 transition-colors"
+              onClick={closeExerciseDetail} 
+              className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:text-white transition-colors shrink-0"
             >
               <span className="material-symbols-outlined">close</span>
             </button>
           </div>
-          <div className="flex-1 flex items-center justify-center bg-black pt-16 pb-4">
-            <video
-              src={playingVideo.url}
-              controls
-              autoPlay
-              playsInline
-              controlsList="nodownload"
-              onContextMenu={(e) => e.preventDefault()}
-              className="w-full h-full max-h-full object-contain"
-            />
+          
+          <div className="flex-1 overflow-y-auto">
+            {/* Video or Icon */}
+            {viewingExercise.exercise?.videoUrl ? (
+              <div className="w-full aspect-video bg-black flex items-center justify-center">
+                <video
+                  src={viewingExercise.exercise.videoUrl}
+                  controls
+                  autoPlay
+                  playsInline
+                  controlsList="nodownload"
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            ) : (
+              <div className="w-full aspect-video bg-slate-800/50 flex flex-col items-center justify-center gap-3 border-b border-slate-800">
+                <div className="w-16 h-16 rounded-2xl bg-slate-800 flex items-center justify-center">
+                  <span className="material-symbols-outlined text-4xl text-slate-500">fitness_center</span>
+                </div>
+                <p className="text-slate-500 font-medium text-sm">Sin video demostrativo</p>
+              </div>
+            )}
+
+            {/* Content */}
+            <div className="p-5 space-y-6">
+              {/* Stats Grid */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="bg-slate-800/30 rounded-xl p-3 flex flex-col items-center justify-center text-center border border-slate-800">
+                  <span className="text-[10px] uppercase font-bold text-slate-500 mb-1">Series</span>
+                  <span className="text-xl font-black text-white">{viewingExercise.sets}</span>
+                </div>
+                <div className="bg-slate-800/30 rounded-xl p-3 flex flex-col items-center justify-center text-center border border-slate-800">
+                  <span className="text-[10px] uppercase font-bold text-slate-500 mb-1">Repeticiones</span>
+                  <span className="text-xl font-black text-white">{viewingExercise.reps}</span>
+                </div>
+                <div className="bg-primary/5 rounded-xl p-3 flex flex-col items-center justify-center text-center border border-primary/20">
+                  <span className="text-[10px] uppercase font-bold text-primary/80 mb-1">Tiempo</span>
+                  <span className="text-xl font-black text-primary">{viewingExercise.time || "—"}</span>
+                </div>
+              </div>
+
+              {/* Description */}
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[16px]">description</span>
+                  Descripción del ejercicio
+                </h4>
+                <div className="bg-slate-800/30 rounded-xl p-5 border border-slate-800">
+                  {viewingExercise.exercise?.description ? (
+                    <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap">
+                      {viewingExercise.exercise.description}
+                    </p>
+                  ) : (
+                    <p className="text-slate-500 text-sm italic text-center py-2">
+                      Este ejercicio no tiene descripción detallada.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}

@@ -9,6 +9,7 @@ interface Ejercicio {
   name: string;
   description: string;
   videoUrl: string | null;
+  categories: string[];
 }
 
 interface EjercicioEnDia {
@@ -56,12 +57,25 @@ export default function RutinasPage() {
   const [selectedRutina, setSelectedRutina] = useState<Rutina | null>(null);
   const [saving, setSaving] = useState(false);
   const [createAssignMode, setCreateAssignMode] = useState(false);
+  const [initialPacienteId, setInitialPacienteId] = useState<string | null>(null);
 
   // Form
   const [formName, setFormName] = useState("");
   const [formDescription, setFormDescription] = useState("");
   const [formDias, setFormDias] = useState<Dia[]>([]);
   const [formError, setFormError] = useState("");
+
+  // Drag & Drop
+  const [draggedItem, setDraggedItem] = useState<{ dayIdx: number; exIdx: number } | null>(null);
+  const [dragOverItem, setDragOverItem] = useState<{ dayIdx: number; exIdx: number } | null>(null);
+
+  // Exercise Selector
+  const [selectorDayIdx, setSelectorDayIdx] = useState<number | null>(null);
+  const [selectorSearch, setSelectorSearch] = useState("");
+  const [selectorSelectedEx, setSelectorSelectedEx] = useState<Ejercicio | null>(null);
+  const [selectorSets, setSelectorSets] = useState(3);
+  const [selectorReps, setSelectorReps] = useState(12);
+  const [selectorTime, setSelectorTime] = useState("");
 
   // Toast
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
@@ -104,6 +118,37 @@ export default function RutinasPage() {
     fetchRutinas();
     fetchEjercicios();
   }, [fetchRutinas, fetchEjercicios]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      const pid = urlParams.get("pacienteId");
+      if (pid) {
+        setInitialPacienteId(pid);
+        setFormName("");
+        setFormDescription("");
+        setFormDias([]);
+        setFormError("");
+        setSelectedRutina(null);
+        setModalMode("create");
+        window.history.replaceState({}, "", "/rutinas");
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (rutinas.length > 0 && typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      const editId = urlParams.get("edit");
+      if (editId) {
+        const toEdit = rutinas.find(r => r.id === editId);
+        if (toEdit) {
+          openEdit(toEdit);
+          window.history.replaceState({}, "", "/rutinas");
+        }
+      }
+    }
+  }, [rutinas]);
 
   const filtered = rutinas.filter((r) => {
     const matchesSearch = r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -177,16 +222,37 @@ export default function RutinasPage() {
     setFormDias(copy);
   };
 
-  const addExerciseToDay = (dayIdx: number) => {
+  const openSelectorForDay = (dayIdx: number) => {
+    setSelectorDayIdx(dayIdx);
+    setSelectorSearch("");
+    setSelectorSelectedEx(null);
+    setSelectorSets(3);
+    setSelectorReps(12);
+    setSelectorTime("");
+  };
+
+  const closeSelector = () => {
+    setSelectorDayIdx(null);
+    setSelectorSelectedEx(null);
+  };
+
+  const confirmExerciseToDay = () => {
+    if (selectorDayIdx === null || !selectorSelectedEx) return;
     const copy = [...formDias];
-    copy[dayIdx] = {
-      ...copy[dayIdx],
+    copy[selectorDayIdx] = {
+      ...copy[selectorDayIdx],
       ejercicios: [
-        ...copy[dayIdx].ejercicios,
-        { exerciseId: "", sets: 3, reps: 12, time: "" },
+        ...copy[selectorDayIdx].ejercicios,
+        {
+          exerciseId: selectorSelectedEx.id,
+          sets: selectorSets,
+          reps: selectorReps,
+          time: selectorTime,
+        },
       ],
     };
     setFormDias(copy);
+    closeSelector();
   };
 
   const removeExerciseFromDay = (dayIdx: number, exIdx: number) => {
@@ -196,6 +262,57 @@ export default function RutinasPage() {
       ejercicios: copy[dayIdx].ejercicios.filter((_, i) => i !== exIdx),
     };
     setFormDias(copy);
+  };
+
+  const handleDragStart = (e: React.DragEvent, dayIdx: number, exIdx: number) => {
+    setDraggedItem({ dayIdx, exIdx });
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragOver = (e: React.DragEvent, dayIdx: number, exIdx: number) => {
+    e.preventDefault();
+    if (!draggedItem) return;
+    if (draggedItem.dayIdx === dayIdx && draggedItem.exIdx === exIdx) return;
+    setDragOverItem({ dayIdx, exIdx });
+  };
+
+  const handleDrop = (e: React.DragEvent, dropDayIdx: number, dropExIdx: number) => {
+    e.preventDefault();
+    if (!draggedItem) return;
+
+    if (draggedItem.dayIdx === dropDayIdx && draggedItem.exIdx === dropExIdx) {
+      setDraggedItem(null);
+      setDragOverItem(null);
+      return;
+    }
+
+    const newFormDias = formDias.map((day) => ({
+      ...day,
+      ejercicios: [...day.ejercicios]
+    }));
+
+    if (draggedItem.dayIdx === dropDayIdx) {
+      const dayExercises = [...formDias[draggedItem.dayIdx].ejercicios];
+      const [moved] = dayExercises.splice(draggedItem.exIdx, 1);
+      dayExercises.splice(dropExIdx, 0, moved);
+      newFormDias[draggedItem.dayIdx].ejercicios = dayExercises;
+    } else {
+      const sourceExercises = [...formDias[draggedItem.dayIdx].ejercicios];
+      const targetExercises = [...formDias[dropDayIdx].ejercicios];
+      const [moved] = sourceExercises.splice(draggedItem.exIdx, 1);
+      targetExercises.splice(dropExIdx, 0, moved);
+      newFormDias[draggedItem.dayIdx].ejercicios = sourceExercises;
+      newFormDias[dropDayIdx].ejercicios = targetExercises;
+    }
+
+    setFormDias(newFormDias);
+    setDraggedItem(null);
+    setDragOverItem(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedItem(null);
+    setDragOverItem(null);
   };
 
   const updateExercise = (
@@ -284,6 +401,8 @@ export default function RutinasPage() {
 
     if (pacienteId) {
       body.pacienteId = pacienteId;
+    } else if (initialPacienteId) {
+      body.pacienteId = initialPacienteId;
     }
 
     try {
@@ -307,6 +426,7 @@ export default function RutinasPage() {
         modalMode === "create" ? "Rutina creada exitosamente" : "Rutina actualizada",
         "success"
       );
+      setInitialPacienteId(null);
       closeModal();
       fetchRutinas();
     } catch {
@@ -815,20 +935,35 @@ export default function RutinasPage() {
                               {/* Exercises list */}
                               <div className="p-4 space-y-3">
                                 {dia.ejercicios.map((ex, eIdx) => (
-                                  <div key={eIdx} className="flex flex-wrap items-center gap-2 p-3 bg-white dark:bg-card-dark rounded-xl border border-slate-200 dark:border-slate-700">
-                                    {/* Exercise select */}
-                                    <div className="relative flex-1 min-w-[200px]">
-                                      <select
-                                        value={ex.exerciseId}
-                                        onChange={(e) => updateExercise(dIdx, eIdx, "exerciseId", e.target.value)}
-                                        className="w-full pl-3.5 pr-10 py-2.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-primary/50 appearance-none cursor-pointer transition-all shadow-sm hover:border-primary/40 focus:border-primary/50"
-                                      >
-                                        <option value="" className="bg-white dark:bg-slate-800 text-slate-500 italic">Seleccionar ejercicio...</option>
-                                        {ejerciciosCatalog.map((ej) => (
-                                          <option key={ej.id} value={ej.id} className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium py-1">{ej.name}</option>
-                                        ))}
-                                      </select>
-                                      <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-xl">expand_more</span>
+                                  <div
+                                    key={eIdx}
+                                    draggable
+                                    onDragStart={(e) => handleDragStart(e, dIdx, eIdx)}
+                                    onDragOver={(e) => handleDragOver(e, dIdx, eIdx)}
+                                    onDrop={(e) => handleDrop(e, dIdx, eIdx)}
+                                    onDragEnd={handleDragEnd}
+                                    className={`flex flex-wrap items-center gap-2 p-3 rounded-xl border transition-all ${
+                                      draggedItem?.dayIdx === dIdx && draggedItem?.exIdx === eIdx
+                                        ? "opacity-50 border-primary border-dashed bg-primary/5"
+                                        : dragOverItem?.dayIdx === dIdx && dragOverItem?.exIdx === eIdx
+                                        ? "border-primary bg-primary/10 scale-[1.02] shadow-lg"
+                                        : "bg-white dark:bg-card-dark border-slate-200 dark:border-slate-700"
+                                    }`}
+                                  >
+                                    <div className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-primary transition-colors pr-1 flex items-center justify-center">
+                                      <span className="material-symbols-outlined text-[20px]">drag_indicator</span>
+                                    </div>
+                                    
+                                    {/* Exercise Display */}
+                                    <div className="flex-1 min-w-[200px] flex items-center gap-3">
+                                      <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
+                                        <span className="material-symbols-outlined">fitness_center</span>
+                                      </div>
+                                      <div className="min-w-0">
+                                        <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                                          {getEjercicioName(ex.exerciseId)}
+                                        </p>
+                                      </div>
                                     </div>
 
                                     {/* Sets */}
@@ -878,7 +1013,7 @@ export default function RutinasPage() {
                                 ))}
 
                                 <button
-                                  onClick={() => addExerciseToDay(dIdx)}
+                                  onClick={() => openSelectorForDay(dIdx)}
                                   className="w-full py-2.5 border border-dashed border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-500 dark:text-slate-400 hover:border-primary hover:text-primary transition-all flex items-center justify-center gap-1.5"
                                 >
                                   <span className="material-symbols-outlined text-sm">add</span>
@@ -1036,6 +1171,106 @@ export default function RutinasPage() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== EXERCISE SELECTOR MODAL ===== */}
+      {selectorDayIdx !== null && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-[fadeIn_0.2s_ease-out]" onClick={closeSelector}>
+          <div className="bg-white dark:bg-card-dark w-full max-w-4xl max-h-[90vh] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl shadow-black/40 flex flex-col overflow-hidden animate-[slideUp_0.3s_ease-out]" onClick={(e) => e.stopPropagation()}>
+            <div className="p-5 md:p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between flex-shrink-0">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Seleccionar Ejercicio</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Día {selectorDayIdx + 1}</p>
+              </div>
+              <button onClick={closeSelector} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 transition-all">
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            
+            {!selectorSelectedEx ? (
+              <div className="flex-1 flex flex-col overflow-hidden">
+                <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-white/[0.02]">
+                  <div className="relative">
+                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+                    <input
+                      className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary text-sm outline-none dark:text-white placeholder:text-slate-400 transition-all"
+                      placeholder="Buscar por nombre o categoría..."
+                      value={selectorSearch}
+                      onChange={(e) => setSelectorSearch(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="flex-1 overflow-y-auto p-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
+                    {ejerciciosCatalog.filter((e) => {
+                      const q = selectorSearch.toLowerCase();
+                      return e.name.toLowerCase().includes(q) || (e.categories && e.categories.some(c => c.toLowerCase().includes(q)));
+                    }).map((ej) => (
+                      <button
+                        key={ej.id}
+                        onClick={() => setSelectorSelectedEx(ej)}
+                        className="text-left bg-white dark:bg-card-dark border border-slate-200 dark:border-slate-700 rounded-xl p-3 hover:border-primary/50 hover:shadow-md transition-all group flex flex-col gap-2"
+                      >
+                        <div className="w-full aspect-video bg-slate-100 dark:bg-slate-800 rounded-lg overflow-hidden flex items-center justify-center relative">
+                          {ej.videoUrl ? (
+                            <>
+                              <video src={ej.videoUrl} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <div className="w-8 h-8 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center text-white">
+                                  <span className="material-symbols-outlined text-sm">play_arrow</span>
+                                </div>
+                              </div>
+                            </>
+                          ) : (
+                            <span className="material-symbols-outlined text-3xl text-slate-300 dark:text-slate-600">fitness_center</span>
+                          )}
+                        </div>
+                        <div className="min-w-0 w-full">
+                          <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate">{ej.name}</h4>
+                          {ej.categories && ej.categories.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1.5">
+                              {ej.categories.slice(0, 3).map(c => (
+                                <span key={c} className="text-[9px] px-1.5 py-0.5 bg-primary/10 text-primary font-bold rounded-md truncate max-w-full">{c}</span>
+                              ))}
+                              {ej.categories.length > 3 && <span className="text-[9px] px-1.5 py-0.5 text-slate-500">+{ej.categories.length - 3}</span>}
+                            </div>
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="flex-1 overflow-y-auto p-6 flex flex-col items-center justify-center max-w-sm mx-auto w-full">
+                <div className="w-16 h-16 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-4">
+                  <span className="material-symbols-outlined text-3xl">fitness_center</span>
+                </div>
+                <h4 className="text-lg font-bold text-slate-900 dark:text-white mb-6 text-center">{selectorSelectedEx.name}</h4>
+                
+                <div className="w-full space-y-4 mb-8">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5">Series (Sets)</label>
+                    <input type="number" min={1} value={selectorSets} onChange={(e) => setSelectorSets(Number(e.target.value))} className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-center font-bold text-lg dark:text-white outline-none focus:ring-2 focus:ring-primary" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5">Repeticiones (Reps)</label>
+                    <input type="number" min={1} value={selectorReps} onChange={(e) => setSelectorReps(Number(e.target.value))} className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-center font-bold text-lg dark:text-white outline-none focus:ring-2 focus:ring-primary" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5">Tiempo (opcional)</label>
+                    <input type="text" placeholder="Ej: 45s" value={selectorTime} onChange={(e) => setSelectorTime(e.target.value)} className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-center font-bold text-lg dark:text-white outline-none focus:ring-2 focus:ring-primary" />
+                  </div>
+                </div>
+
+                <div className="flex gap-3 w-full mt-auto">
+                  <button onClick={() => setSelectorSelectedEx(null)} className="flex-1 py-3 bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 rounded-xl font-bold hover:bg-slate-200 transition-all">Volver</button>
+                  <button onClick={confirmExerciseToDay} className="flex-1 py-3 bg-primary hover:bg-primary/90 text-white rounded-xl font-bold shadow-lg shadow-primary/20 transition-all">Agregar</button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

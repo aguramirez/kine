@@ -8,6 +8,7 @@ interface Ejercicio {
   name: string;
   description: string;
   videoUrl: string | null;
+  categories: string[];
   createdAt: string;
 }
 
@@ -29,6 +30,9 @@ export default function EjerciciosPage() {
   const [formName, setFormName] = useState("");
   const [formDescription, setFormDescription] = useState("");
   const [formVideoUrl, setFormVideoUrl] = useState("");
+  const [formCategories, setFormCategories] = useState<string[]>([]);
+  const [categoryInput, setCategoryInput] = useState("");
+  const [showCategorySuggestions, setShowCategorySuggestions] = useState(false);
   const [formError, setFormError] = useState("");
 
   // Toast
@@ -58,16 +62,38 @@ export default function EjerciciosPage() {
   // Filtered exercises
   const filtered = ejercicios.filter((e) => {
     const matchesSearch = e.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          e.description.toLowerCase().includes(searchQuery.toLowerCase());
+                          e.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          (e.categories && e.categories.some(c => c.toLowerCase().includes(searchQuery.toLowerCase())));
     const matchesVideo = filterNoVideo ? !e.videoUrl : true;
     return matchesSearch && matchesVideo;
   });
+
+  // Categories suggestions
+  const allCategories = Array.from(new Set(ejercicios.flatMap((e) => e.categories || [])));
+  const categorySuggestions = allCategories.filter((c) =>
+    c.toLowerCase().includes(categoryInput.toLowerCase()) && !formCategories.includes(c)
+  );
+
+  const addCategory = (cat: string) => {
+    const trimmed = cat.trim();
+    if (trimmed && !formCategories.includes(trimmed)) {
+      setFormCategories([...formCategories, trimmed]);
+    }
+    setCategoryInput("");
+    setShowCategorySuggestions(false);
+  };
+
+  const removeCategory = (cat: string) => {
+    setFormCategories(formCategories.filter((c) => c !== cat));
+  };
 
   // Modal helpers
   const openCreate = () => {
     setFormName("");
     setFormDescription("");
     setFormVideoUrl("");
+    setFormCategories([]);
+    setCategoryInput("");
     setFormError("");
     setSelectedEjercicio(null);
     setModalMode("create");
@@ -77,6 +103,8 @@ export default function EjerciciosPage() {
     setFormName(ej.name);
     setFormDescription(ej.description);
     setFormVideoUrl(ej.videoUrl || "");
+    setFormCategories(ej.categories || []);
+    setCategoryInput("");
     setFormError("");
     setSelectedEjercicio(ej);
     setModalMode("edit");
@@ -96,6 +124,7 @@ export default function EjerciciosPage() {
     setModalMode(null);
     setSelectedEjercicio(null);
     setFormError("");
+    setShowCategorySuggestions(false);
   };
 
   // CRUD operations
@@ -116,6 +145,7 @@ export default function EjerciciosPage() {
           body: JSON.stringify({
             name: formName.trim(),
             description: formDescription.trim(),
+            categories: formCategories,
             videoUrl: formVideoUrl.trim() || null,
           }),
         });
@@ -132,6 +162,7 @@ export default function EjerciciosPage() {
           body: JSON.stringify({
             name: formName.trim(),
             description: formDescription.trim(),
+            categories: formCategories,
             videoUrl: formVideoUrl.trim() || null,
           }),
         });
@@ -322,118 +353,45 @@ export default function EjerciciosPage() {
             )}
           </div>
         ) : (
-          <>
-            {/* Desktop table */}
-            <div className="hidden md:block bg-white dark:bg-card-dark rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse min-w-[800px]">
-                  <thead>
-                  <tr className="bg-slate-50 dark:bg-white/5 text-slate-500 text-xs font-bold uppercase tracking-wider">
-                    <th className="px-6 py-4">Ejercicio</th>
-                    <th className="px-6 py-4">Descripción</th>
-                    <th className="px-6 py-4 text-center">Video</th>
-                    <th className="px-6 py-4 text-center">Fecha</th>
-                    <th className="px-6 py-4 text-right">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                  {filtered.map((ej) => (
-                    <tr
-                      key={ej.id}
-                      className="hover:bg-slate-50 dark:hover:bg-white/[0.03] transition-colors group"
-                    >
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary flex-shrink-0 group-hover:bg-primary/20 transition-colors">
-                            <span className="material-symbols-outlined">fitness_center</span>
-                          </div>
-                          <span className="text-sm font-semibold text-slate-900 dark:text-white">
-                            {ej.name}
-                          </span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+            {filtered.map((ej) => (
+              <button
+                key={ej.id}
+                onClick={() => openView(ej)}
+                className="text-left bg-white dark:bg-card-dark border border-slate-200 dark:border-slate-800 rounded-2xl p-4 hover:border-primary/50 hover:shadow-lg transition-all group flex flex-col gap-3"
+              >
+                <div className="w-full aspect-video bg-slate-100 dark:bg-slate-800/50 rounded-xl overflow-hidden flex items-center justify-center relative border border-slate-200 dark:border-slate-700/50">
+                  {ej.videoUrl ? (
+                    <>
+                      <video src={ej.videoUrl} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" muted playsInline preload="metadata" />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-8 h-8 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center text-white">
+                          <span className="material-symbols-outlined text-sm">play_arrow</span>
                         </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs truncate">
-                          {ej.description}
-                        </p>
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        {ej.videoUrl ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-500/10 text-emerald-500 text-[10px] font-bold rounded-full">
-                            <span className="material-symbols-outlined text-xs">videocam</span>
-                            Sí
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 dark:bg-white/5 text-slate-400 text-[10px] font-bold rounded-full">
-                            <span className="material-symbols-outlined text-xs">videocam_off</span>
-                            No
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <span className="text-xs text-slate-500 dark:text-slate-400">
-                          {new Date(ej.createdAt).toLocaleDateString("es-AR", {
-                            day: "2-digit",
-                            month: "short",
-                            year: "numeric",
-                          })}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <button
-                            onClick={() => openView(ej)}
-                            className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-500/10 rounded-lg transition-all"
-                            title="Ver"
-                          >
-                            <span className="material-symbols-outlined text-lg">visibility</span>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              </div>
-            </div>
-
-            {/* Mobile list */}
-            <div className="md:hidden space-y-3">
-              {filtered.map((ej) => (
-                <div key={ej.id} className="bg-white dark:bg-card-dark rounded-xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm flex flex-col gap-3 group">
-                  <div className="flex justify-between items-start gap-3">
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
-                        <span className="material-symbols-outlined">fitness_center</span>
                       </div>
-                      <div className="min-w-0">
-                        <h3 className="text-sm font-bold text-slate-900 dark:text-white truncate">{ej.name}</h3>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
-                          <span className="material-symbols-outlined text-[12px]">calendar_today</span>
-                          {new Date(ej.createdAt).toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" })}
-                        </p>
-                      </div>
-                    </div>
-                    <button onClick={() => openView(ej)} className="p-1.5 text-slate-400 hover:text-blue-500 rounded-lg transition-all flex-shrink-0"><span className="material-symbols-outlined text-xl">visibility</span></button>
-                  </div>
-                  
-                  <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2">{ej.description}</p>
-                  
-                  <div className="flex items-center justify-between mt-1">
-                    {ej.videoUrl ? (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 text-emerald-500 text-[10px] font-bold rounded-lg uppercase tracking-wider">
-                        <span className="material-symbols-outlined text-[14px]">videocam</span> Con video
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-white/5 text-slate-400 text-[10px] font-bold rounded-lg uppercase tracking-wider">
-                        <span className="material-symbols-outlined text-[14px]">videocam_off</span> Sin video
-                      </span>
-                    )}
-                  </div>
+                    </>
+                  ) : (
+                    <span className="material-symbols-outlined text-4xl text-slate-300 dark:text-slate-600 group-hover:text-primary/50 transition-colors">fitness_center</span>
+                  )}
                 </div>
-              ))}
-            </div>
-          </>
+                <div className="min-w-0 w-full flex-1 flex flex-col">
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white truncate mb-1 group-hover:text-primary transition-colors">{ej.name}</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mb-3 flex-1">{ej.description || "Sin descripción"}</p>
+                  
+                  {ej.categories && ej.categories.length > 0 ? (
+                    <div className="flex flex-wrap gap-1 mt-auto">
+                      {ej.categories.slice(0, 3).map(c => (
+                        <span key={c} className="text-[10px] px-2 py-0.5 bg-primary/10 text-primary font-bold rounded-lg truncate max-w-full">{c}</span>
+                      ))}
+                      {ej.categories.length > 3 && <span className="text-[10px] px-2 py-0.5 text-slate-500 bg-slate-100 dark:bg-white/5 rounded-lg">+{ej.categories.length - 3}</span>}
+                    </div>
+                  ) : (
+                    <div className="mt-auto h-5"></div>
+                  )}
+                </div>
+              </button>
+            ))}
+          </div>
         )}
       </div>
 
@@ -594,6 +552,67 @@ export default function EjerciciosPage() {
                         placeholder="Ej: Rotación externa con banda"
                         className="w-full pl-11 pr-4 py-3.5 bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary/40 focus:border-primary/50 outline-none transition-all dark:text-white placeholder:text-slate-400"
                       />
+                    </div>
+                  </div>
+
+                  {/* Categories */}
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2 pl-1">
+                      Categorías <span className="text-slate-400 dark:text-slate-600 normal-case tracking-normal">(opcional)</span>
+                    </label>
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap gap-2">
+                        {formCategories.map((c) => (
+                          <span key={c} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary text-xs font-bold rounded-xl border border-primary/20">
+                            {c}
+                            <button
+                              type="button"
+                              onClick={() => removeCategory(c)}
+                              className="text-primary hover:text-red-500 transition-colors"
+                            >
+                              <span className="material-symbols-outlined text-[14px]">close</span>
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                      <div className="relative">
+                        <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-lg">label</span>
+                        <input
+                          type="text"
+                          value={categoryInput}
+                          onChange={(e) => {
+                            setCategoryInput(e.target.value);
+                            setShowCategorySuggestions(true);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              addCategory(categoryInput);
+                            }
+                          }}
+                          onFocus={() => setShowCategorySuggestions(true)}
+                          onBlur={() => setTimeout(() => setShowCategorySuggestions(false), 200)}
+                          placeholder="Escribí una categoría y presioná Enter (ej: Hombro, Movilidad)"
+                          className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary/40 focus:border-primary/50 outline-none transition-all dark:text-white placeholder:text-slate-400"
+                        />
+                        {showCategorySuggestions && categorySuggestions.length > 0 && (
+                          <div className="absolute z-10 w-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden">
+                            {categorySuggestions.map((c) => (
+                              <button
+                                key={c}
+                                type="button"
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  addCategory(c);
+                                }}
+                                className="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
+                              >
+                                {c}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
 
