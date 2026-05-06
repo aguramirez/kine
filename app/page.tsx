@@ -188,15 +188,23 @@ export default function PacienteLoginPage() {
           </form>
         </div>
 
-        {/* Admin link */}
-        {/* <Link 
-          href="/admin"
-          className="mt-8 flex items-center gap-2 text-xs text-slate-600 hover:text-primary transition-colors duration-300 group"
-        >
-          <span className="material-symbols-outlined text-sm group-hover:text-primary transition-colors">admin_panel_settings</span>
-          <span>Acceso Administrador</span>
-          <span className="material-symbols-outlined text-sm opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">chevron_right</span>
-        </Link> */}
+        {/* Appointment Actions */}
+        <div className="flex gap-3 mt-6 w-full">
+          <Link
+            href="/turnos/agendar"
+            className="flex-1 py-3.5 bg-white/[0.04] border border-slate-700/60 rounded-2xl text-sm font-bold text-slate-300 flex items-center justify-center gap-2 hover:bg-white/[0.08] hover:border-primary/30 hover:text-primary transition-all duration-300"
+          >
+            <span className="material-symbols-outlined text-[18px]">calendar_add_on</span>
+            Agendar Turno
+          </Link>
+          <Link
+            href="/turnos/buscar"
+            className="flex-1 py-3.5 bg-white/[0.04] border border-slate-700/60 rounded-2xl text-sm font-bold text-slate-300 flex items-center justify-center gap-2 hover:bg-white/[0.08] hover:border-primary/30 hover:text-primary transition-all duration-300"
+          >
+            <span className="material-symbols-outlined text-[18px]">event</span>
+            Ver mi Turno
+          </Link>
+        </div>
 
         {/* Footer */}
         <p className="text-center text-[10px] text-slate-700 mt-6 tracking-wide">

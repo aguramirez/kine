@@ -22,20 +22,21 @@ Webapp responsive (Mobile First) diseñada para profesionales de la kinesiologí
 
 ### 1. Perfil Admin
 El administrador tiene control total sobre las entidades principales.
-- **Atributos:** Nombre completo, Email, DNI, Password, Username.
+- **Atributos:** Nombre completo, Email, DNI, Password, Username, Teléfono (`phone`), `slotDuration`.
 - **Vistas y Funcionalidades:**
-  - **Dashboard:** Información resumida (cantidad de pacientes activos, pacientes que entrenaron hoy, gráficos de progreso).
+  - **Dashboard:** Información resumida (cantidad de pacientes activos, pacientes que entrenaron hoy, gráficos de progreso). Icono de **Campanita (Notificaciones)** para avisos In-App.
   - **Pacientes:** CRUD de pacientes.
   - **Ejercicios:** CRUD de ejercicios (crear ejercicio con nombre, descripción y video).
   - **Rutinas:** CRUD de rutinas y días. Una rutina incluye un nombre, descripción y días. Cada día es un conjunto de ejercicios con *sets*, *reps* y *tiempo*.
   - **Diagnósticos:** Gestión de diagnósticos del sistema.
+  - **Calendario y Turnos:** Vista de calendario (react-big-calendar) para ver turnos agendados y crearlos manualmente. Configuración de horarios base (`HorarioSemanal`) y excepciones (`ExcepcionHorario` para feriados/vacaciones).
 
 ### 2. Perfil Paciente
 Vista simplificada para que el paciente acceda a sus rutinas.
 - **Atributos:** Nombre completo, DNI, Teléfono, Email, Género, Edad, Altura, Peso, Notas, Cantidad de sesiones, Obra social, Total facturado, Total cobrado, Diferencia, Alta (estado), Diagnóstico[], SPADI json.
 - **Vistas y Funcionalidades:**
   - **Login:** Acceso únicamente utilizando su DNI.
-  - **Home:** Progreso de sesiones, visualización de su rutina asignada (días y ejercicios) y botón de "Terminar Sesión".
+  - **Home:** Progreso de sesiones, visualización de su rutina asignada (días y ejercicios), botón de "Terminar Sesión", y botones principales para **"Agendar Turno"** y **"Ver/modificar mi turno"**.
 
 ## Especificaciones y Reglas de Negocio Críticas
 
@@ -54,6 +55,15 @@ Vista simplificada para que el paciente acceda a sus rutinas.
 4. **SPADI (Índice de Dolor y Discapacidad):**
    - Se guarda como un objeto JSON persistido que incluye 16 parámetros numéricos evaluados del 0 al 10 (ej. *espm, csasel, aaaeuea, atlppdsc, aeceba, lep, lle, pucouj, pucclbd, plp, cuoeuea, cuopd4k, cadsbt, tps, tds, tss*), para facilitar la escalabilidad.
 
+5. **Sistema de Turnos y Horarios Flexibles:**
+   - La disponibilidad se calcula cruzando un `HorarioSemanal` (disponibilidad base repetitiva) con `ExcepcionHorario` (feriados, vacaciones, o alteraciones puntuales para un día específico).
+   - `react-big-calendar` se utiliza para la vista del administrador.
+
+6. **Integración de WhatsApp (Baileys):**
+   - Reside en una carpeta independiente `/whatsapp-bot` (Node.js nativo) preparada para desplegar en Railway (ya que Vercel Serverless no soporta WebSockets persistentes).
+   - Vercel (Next.js) se comunica con este bot vía HTTP para disparar confirmaciones de turnos.
+   - Existen CRON jobs para enviar recordatorios a pacientes ("tienes turno hoy") y resúmenes diarios a los administradores a las 22:00 hs.
+
 ## Modelos de Datos (Prisma Schema)
 
 ```prisma
@@ -67,12 +77,50 @@ datasource db {
 }
 
 model Admin {
+  id           String   @id @default(uuid())
+  fullName     String
+  email        String   @unique
+  dni          String   @unique
+  password     String
+  username     String   @unique
+  phone        String?  // Necesario para notificaciones de WhatsApp
+  slotDuration Int      @default(45) // Duración del turno en minutos
+  createdAt    DateTime @default(now())
+}
+
+model HorarioSemanal {
   id        String   @id @default(uuid())
-  fullName  String
-  email     String   @unique
-  dni       String   @unique
-  password  String
-  username  String   @unique
+  adminId   String
+  dayOfWeek Int      // 0 = Domingo, 1 = Lunes...
+  startTime String   // ej. "08:00"
+  endTime   String   // ej. "12:00"
+}
+
+model ExcepcionHorario {
+  id        String   @id @default(uuid())
+  adminId   String
+  date      DateTime // Fecha exacta de la excepción
+  isClosed  Boolean  @default(false) // Si es true, no hay turnos (feriado/vacación)
+  startTime String?  // Modificación puntual de hora de inicio
+  endTime   String?  // Modificación puntual de hora de fin
+}
+
+model Turno {
+  id         String   @id @default(uuid())
+  date       DateTime
+  startTime  DateTime
+  endTime    DateTime
+  pacienteId String
+  adminId    String
+  status     String   @default("CONFIRMED") // PENDING, CONFIRMED, CANCELLED
+  createdAt  DateTime @default(now())
+}
+
+model Notificacion {
+  id        String   @id @default(uuid())
+  adminId   String
+  message   String
+  isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
 }
 

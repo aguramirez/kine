@@ -9,6 +9,9 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       include: {
         rutinas: {
           include: { dias: { include: { ejercicios: true } } }
+        },
+        tests: {
+          orderBy: { createdAt: 'desc' }
         }
       }
     });
@@ -30,7 +33,6 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
     // Regla de Negocio: Cálculo Financiero al actualizar
     if (data.totalInvoiced !== undefined || data.totalPaid !== undefined) {
-      // Necesitamos los valores actuales si solo se actualiza uno de los dos
       const dbPaciente = await prisma.paciente.findUnique({ where: { id } });
       if (!dbPaciente) return NextResponse.json({ error: 'Paciente no encontrado' }, { status: 404 });
 
@@ -40,9 +42,20 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       data.difference = finalInvoiced - finalPaid;
     }
 
+    // Limpieza de campos legacy o calculados que no deben enviarse directo
+    delete data.spadi;
+    delete data.spadiEnd;
+    delete data.id;
+    delete data.createdAt;
+
     const updatedPaciente = await prisma.paciente.update({
       where: { id },
-      data
+      data,
+      include: {
+        tests: {
+          orderBy: { createdAt: 'desc' }
+        }
+      }
     });
 
     return NextResponse.json(updatedPaciente, { status: 200 });

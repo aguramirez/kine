@@ -5,9 +5,11 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import Logo from "@/components/Logo";
+import NotificationsBell from "./NotificationsBell";
 
 const navItems = [
   { href: "/dashboard", label: "Panel de Control", icon: "dashboard" },
+  { href: "/calendario", label: "Calendario", icon: "calendar_month" },
   { href: "/ejercicios", label: "Ejercicios", icon: "fitness_center" },
   { href: "/rutinas", label: "Rutinas", icon: "assignment" },
   { href: "/pacientes", label: "Pacientes", icon: "groups" },
@@ -56,19 +58,19 @@ export default function SidebarAdmin({ isOpen, onClose }: SidebarAdminProps) {
       {/* Overlay for mobile */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden animate-[fadeIn_0.2s_ease-out]"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden animate-[fadeIn_0.2s_ease-out]"
           onClick={onClose}
         />
       )}
 
       <aside
         className={`
-          fixed md:relative z-50 md:z-auto
+          fixed lg:relative z-50 lg:z-auto
           w-72 h-full
           bg-white dark:bg-card-dark border-r border-slate-200 dark:border-slate-800
           flex flex-col
           transition-transform duration-300 ease-out
-          ${isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
+          ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
         `}
       >
         {/* Logo */}
@@ -82,34 +84,36 @@ export default function SidebarAdmin({ isOpen, onClose }: SidebarAdminProps) {
           {/* Close button for mobile */}
           <button
             onClick={onClose}
-            className="md:hidden p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 transition-all"
+            className="lg:hidden p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 transition-all"
           >
             <span className="material-symbols-outlined">close</span>
           </button>
         </div>
 
         {/* User info */}
-        <div className="px-6 py-4 flex items-center gap-3 border-b border-slate-200 dark:border-slate-800">
-          <div className="size-14 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30 overflow-hidden relative">
-            {!imageError && adminUsername ? (
-              <Image
-                fill
-                className="object-cover"
-                alt={`Lic. ${adminName}`}
-                src={`/${adminUsername}.jpg`}
-                onError={() => setImageError(true)}
-              />
-            ) : (
-              <span className="text-primary font-bold">{adminInitials}</span>
-            )}
-          </div>
-          <div className="flex flex-col">
-            <h1 className="text-sm font-semibold text-slate-900 dark:text-white leading-none">
-              Lic. {adminName || "Cargando..."}
-            </h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Administrador
-            </p>
+        <div className="px-6 py-4 flex items-center justify-between border-b border-slate-200 dark:border-slate-800">
+          <div className="flex items-center gap-3">
+            <div className="size-10 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30 overflow-hidden relative shrink-0">
+              {!imageError && adminUsername ? (
+                <Image
+                  fill
+                  className="object-cover"
+                  alt={`Lic. ${adminName}`}
+                  src={`/${adminUsername}.jpg`}
+                  onError={() => setImageError(true)}
+                />
+              ) : (
+                <span className="text-primary font-bold text-xs">{adminInitials}</span>
+              )}
+            </div>
+            <div className="flex flex-col overflow-hidden">
+              <h1 className="text-sm font-semibold text-slate-900 dark:text-white leading-none truncate w-32">
+                {adminName || "Cargando..."}
+              </h1>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 truncate">
+                Administrador
+              </p>
+            </div>
           </div>
         </div>
 

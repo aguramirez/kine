@@ -18,9 +18,6 @@ export async function GET(req: Request) {
             },
           },
         },
-        tests: {
-          orderBy: { createdAt: 'desc' },
-        },
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -63,10 +60,7 @@ export async function POST(req: Request) {
         totalPaid,
         difference,
         adminId: data.adminId || null,
-      },
-      include: {
-        tests: true,
-      },
+      }
     });
 
     return NextResponse.json(newPaciente, { status: 201 });

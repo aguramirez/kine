@@ -7,15 +7,28 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum TestType {
+  FABQ
+  TAMPA
+  PCS
+  SPADI
+}
+
 model Admin {
   id        String   @id @default(uuid())
   fullName  String
   email     String   @unique
   dni       String   @unique
   password  String
-  username  String   @unique
-  createdAt DateTime @default(now())
-  pacientes Paciente[]
+  username     String   @unique
+  phone        String?
+  slotDuration Int      @default(45)
+  createdAt    DateTime @default(now())
+  pacientes    Paciente[]
+  horarios     HorarioSemanal[]
+  excepciones  ExcepcionHorario[]
+  turnos       Turno[]
+  notificaciones Notificacion[]
 }
 
 model Paciente {
@@ -39,13 +52,27 @@ model Paciente {
   isActive         Boolean   @default(true)
   dischargeDate    DateTime?
   diagnoses        String[]
-  spadi            Json      @default("{}")
-  spadiEnd         Json?     @default("{}")
   createdAt        DateTime  @default(now())
   rutinas          Rutina[]
   adminId          String?
   admin            Admin?    @relation(fields: [adminId], references: [id])
   notasClinicas    NotaClinica[]
+  turnos           Turno[]
+  tests            PatientTest[]
+}
+
+model PatientTest {
+  id          String   @id @default(uuid())
+  pacienteId  String
+  paciente    Paciente @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+  testType    TestType
+  responses   Json     // { itemKey: score, ... }
+  totalScore  Int
+  subScores   Json?    // { FABQpa: 12, FABQw: 28 }
+  createdAt   DateTime @default(now())
+
+  @@index([pacienteId])
+  @@index([testType])
 }
 
 model Ejercicio {
@@ -97,3 +124,45 @@ model NotaClinica {
   createdAt   DateTime @default(now())
 }
 
+model HorarioSemanal {
+  id        String   @id @default(uuid())
+  adminId   String
+  admin     Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  dayOfWeek Int      // 0 = Domingo, 1 = Lunes...
+  startTime String   // ej. "08:00"
+  endTime   String   // ej. "12:00"
+  createdAt DateTime @default(now())
+}
+
+model ExcepcionHorario {
+  id        String   @id @default(uuid())
+  adminId   String
+  admin     Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  date      DateTime
+  isClosed  Boolean  @default(false)
+  startTime String?
+  endTime   String?
+  createdAt DateTime @default(now())
+}
+
+model Turno {
+  id         String   @id @default(uuid())
+  date       DateTime
+  startTime  DateTime
+  endTime    DateTime
+  pacienteId String
+  paciente   Paciente @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+  adminId    String
+  admin      Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  status     String   @default("CONFIRMED") // PENDING, CONFIRMED, CANCELLED
+  createdAt  DateTime @default(now())
+}
+
+model Notificacion {
+  id        String   @id @default(uuid())
+  adminId   String
+  admin     Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}

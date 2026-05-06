@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/pacientes/[id]/profile — Datos completos del paciente con rutinas y ejercicios
 export async function GET(
   req: Request,
