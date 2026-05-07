@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Dot } from 'recharts';
 import { TestType, TEST_DEFINITIONS, TEST_TYPES_LIST, calculateScores, getTestDefinition } from "@/lib/test-definitions";
 import TestForm from "./TestForm";
 
@@ -62,14 +62,55 @@ export default function TestsTab({ pacienteId }: TestsTabProps) {
 
   const filteredTests = tests.filter(t => filterType === 'ALL' || t.testType === filterType);
   
-  // Chart data for progress visualization
-  const chartData = tests
-    .filter(t => t.testType === (filterType === 'ALL' ? 'SPADI' : filterType))
-    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
-    .map(t => ({
-      fecha: new Date(t.createdAt).toLocaleDateString(),
-      puntaje: Math.round(t.totalScore)
-    }));
+  // Prepare data for the multi-line chart
+  const currentTestType = filterType === 'ALL' ? 'SPADI' : filterType;
+  const definition = getTestDefinition(currentTestType as TestType);
+  
+  const typeTests = tests
+    .filter(t => t.testType === currentTestType)
+    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+  // Limit to last 5 tests for visual clarity if needed, or show all
+  // The user asked for "5 tests" as an example, so we'll show what's available
+  const chartData = definition.items.map(item => {
+    const node: any = {
+      id: item.id,
+      label: item.id.toUpperCase(),
+      fullName: item.label,
+    };
+    typeTests.forEach(t => {
+      const dateKey = new Date(t.createdAt).toLocaleDateString();
+      node[dateKey] = t.responses[item.id] || 0;
+    });
+    return node;
+  });
+
+  const testDates = Array.from(new Set(typeTests.map(t => new Date(t.createdAt).toLocaleDateString())));
+  const COLORS = ['#ff6d00', '#3b82f6', '#10b981', '#8b5cf6', '#f43f5e', '#eab308'];
+
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      const item = payload[0].payload;
+      return (
+        <div className="bg-slate-900 border border-slate-800 p-3 rounded-xl shadow-xl max-w-xs">
+          <p className="text-[10px] font-bold text-primary uppercase tracking-wider mb-1">{item.label}</p>
+          <p className="text-xs text-white mb-2 leading-relaxed">{item.fullName}</p>
+          <div className="space-y-1 border-t border-white/10 pt-2">
+            {payload.map((entry: any, index: number) => (
+              <div key={index} className="flex justify-between items-center gap-4">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
+                  <span className="text-[10px] text-slate-400">{entry.name}</span>
+                </div>
+                <span className="text-[10px] font-bold text-white">{entry.value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
 
   return (
     <div className="space-y-6">
@@ -113,21 +154,45 @@ export default function TestsTab({ pacienteId }: TestsTabProps) {
           </div>
 
           {/* Chart Visualization */}
-          {chartData.length > 0 && (
+          {typeTests.length > 0 && (
             <div className="bg-white dark:bg-card-dark p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Progreso: {filterType === 'ALL' ? 'SPADI' : filterType}</p>
-              <div className="h-48 w-full">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Evolución por Pregunta: {currentTestType}</p>
+              <div className="h-64 w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#888888" opacity={0.1} />
-                    <XAxis dataKey="fecha" fontSize={10} tick={{ fill: '#888' }} />
-                    <YAxis fontSize={10} tick={{ fill: '#888' }} />
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: '#1a1a1a', border: 'none', borderRadius: '12px', fontSize: '12px', color: '#fff' }}
-                      itemStyle={{ color: '#ff6d00' }}
+                  <LineChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#888888" opacity={0.1} vertical={false} />
+                    <XAxis 
+                      dataKey="label" 
+                      fontSize={9} 
+                      tick={{ fill: '#888' }} 
+                      axisLine={false}
+                      tickLine={false}
                     />
-                    <Bar dataKey="puntaje" fill="#ff6d00" radius={[4, 4, 0, 0]} />
-                  </BarChart>
+                    <YAxis 
+                      fontSize={9} 
+                      tick={{ fill: '#888' }} 
+                      axisLine={false}
+                      tickLine={false}
+                      domain={[0, definition.scale.values[definition.scale.values.length - 1]]}
+                    />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend 
+                      iconType="circle" 
+                      wrapperStyle={{ fontSize: '9px', paddingTop: '10px' }}
+                    />
+                    {testDates.map((date, index) => (
+                      <Line 
+                        key={date}
+                        type="monotone"
+                        dataKey={date}
+                        name={date}
+                        stroke={COLORS[index % COLORS.length]}
+                        strokeWidth={2}
+                        dot={{ r: 3, strokeWidth: 2, fill: COLORS[index % COLORS.length] }}
+                        activeDot={{ r: 5, strokeWidth: 0 }}
+                      />
+                    ))}
+                  </LineChart>
                 </ResponsiveContainer>
               </div>
             </div>
