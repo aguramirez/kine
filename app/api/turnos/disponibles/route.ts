@@ -73,9 +73,12 @@ export async function GET(req: Request) {
     let availableSlots: Date[] = [];
 
     for (const range of ranges) {
-      // We parse the time relative to the requested day in Argentina
-      let currentSlot = parse(range.start, 'HH:mm', startOfRequestedDay);
-      const endTime = parse(range.end, 'HH:mm', startOfRequestedDay);
+      // Construct start and end times as full strings to avoid local time parsing issues
+      const startStr = `${dateStr}T${range.start}:00`;
+      const endStr = `${dateStr}T${range.end}:00`;
+      
+      let currentSlot = parseArgentinaDate(startStr);
+      const endTime = parseArgentinaDate(endStr);
 
       while (addMinutes(currentSlot, slotDuration) <= endTime) {
         availableSlots.push(new Date(currentSlot));
