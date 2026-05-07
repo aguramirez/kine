@@ -94,9 +94,11 @@ export async function POST(req: Request) {
       const fechaTurno = formatInArgentina(dateParsed, 'dd/MM/yyyy');
       const horaTurno = formatInArgentina(startTimeParsed, 'HH:mm');
 
+      console.log(`[WhatsApp] Intentando notificar a la URL: ${WHATSAPP_BOT_URL}/send-message`);
+
       // Notify Patient
       if (newTurno.paciente.phone) {
-        await fetch(`${WHATSAPP_BOT_URL}/send-message`, {
+        const pRes = await fetch(`${WHATSAPP_BOT_URL}/send-message`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -104,12 +106,13 @@ export async function POST(req: Request) {
             message: `¡Hola ${newTurno.paciente.fullName}!\nAgendaste tu turno el día ${fechaTurno} a las ${horaTurno} con el Lic. ${newTurno.admin.fullName}.\nPodés ver/modificar tu turno acá: https://omegafit.agustindev.com.ar/turnos/buscar\nhasta 24 horas antes de tu turno.`
           })
         });
+        console.log(`[WhatsApp] Respuesta paciente: ${pRes.status} ${pRes.statusText}`);
       }
 
       // Notify Admin
       const adminData = await prisma.admin.findUnique({ where: { id: adminId } });
       if (adminData && adminData.phone) {
-        await fetch(`${WHATSAPP_BOT_URL}/send-message`, {
+        const aRes = await fetch(`${WHATSAPP_BOT_URL}/send-message`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -117,9 +120,10 @@ export async function POST(req: Request) {
             message: `¡Nuevo Turno!\n${newTurno.paciente.fullName} ha agendado un turno el ${fechaTurno} a las ${horaTurno}.`
           })
         });
+        console.log(`[WhatsApp] Respuesta admin: ${aRes.status} ${aRes.statusText}`);
       }
     } catch (botErr) {
-      console.error("Error calling WhatsApp bot", botErr);
+      console.error("[WhatsApp] Error crítico llamando al bot:", botErr);
     }
 
     return NextResponse.json(newTurno, { status: 201 });
@@ -154,9 +158,11 @@ export async function DELETE(req: Request) {
       const fechaTurno = formatInArgentina(turno.date, 'dd/MM/yyyy');
       const horaTurno = formatInArgentina(turno.startTime, 'HH:mm');
 
+      console.log(`[WhatsApp Cancel] Intentando notificar a la URL: ${WHATSAPP_BOT_URL}/send-message`);
+
       // Notify Patient
       if (turno.paciente.phone) {
-        await fetch(`${WHATSAPP_BOT_URL}/send-message`, {
+        const pRes = await fetch(`${WHATSAPP_BOT_URL}/send-message`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -164,11 +170,12 @@ export async function DELETE(req: Request) {
             message: `Hola ${turno.paciente.fullName}, te informamos que tu turno del día ${fechaTurno} a las ${horaTurno} hs con el Lic. ${turno.admin.fullName} ha sido CANCELADO.\nPor favor comunicate para reprogramarlo o agenda de nuevo en: https://omegafit.agustindev.com.ar/turnos/agendar`
           })
         });
+        console.log(`[WhatsApp Cancel] Respuesta paciente: ${pRes.status}`);
       }
 
       // Notify Admin
       if (turno.admin.phone) {
-        await fetch(`${WHATSAPP_BOT_URL}/send-message`, {
+        const aRes = await fetch(`${WHATSAPP_BOT_URL}/send-message`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -176,9 +183,10 @@ export async function DELETE(req: Request) {
             message: `❌ Turno Cancelado:\nEl paciente ${turno.paciente.fullName} ha cancelado su turno del día ${fechaTurno} a las ${horaTurno} hs.`
           })
         });
+        console.log(`[WhatsApp Cancel] Respuesta admin: ${aRes.status}`);
       }
     } catch (botErr) {
-      console.error("Error calling WhatsApp bot on cancel", botErr);
+      console.error("[WhatsApp Cancel] Error crítico:", botErr);
     }
 
     return NextResponse.json(updatedTurno, { status: 200 });
@@ -240,8 +248,10 @@ export async function PUT(req: Request) {
       const fechaNueva = formatInArgentina(updatedTurno.date, 'dd/MM/yyyy');
       const horaNueva = formatInArgentina(updatedTurno.startTime, 'HH:mm');
 
+      console.log(`[WhatsApp Modify] Intentando notificar a la URL: ${WHATSAPP_BOT_URL}/send-message`);
+
       if (turnoActual.paciente.phone) {
-        await fetch(`${WHATSAPP_BOT_URL}/send-message`, {
+        const pRes = await fetch(`${WHATSAPP_BOT_URL}/send-message`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -249,11 +259,12 @@ export async function PUT(req: Request) {
             message: `Hola ${turnoActual.paciente.fullName}, tu turno del día ${fechaOriginal} a las ${horaOriginal} ha sido MODIFICADO.\n\n✅ Nueva Fecha: ${fechaNueva}\n✅ Nuevo Horario: ${horaNueva} hs\nProfesional: Lic. ${turnoActual.admin.fullName}`
           })
         });
+        console.log(`[WhatsApp Modify] Respuesta paciente: ${pRes.status}`);
       }
 
       // Notify Admin via WhatsApp
       if (turnoActual.admin.phone) {
-        await fetch(`${WHATSAPP_BOT_URL}/send-message`, {
+        const aRes = await fetch(`${WHATSAPP_BOT_URL}/send-message`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -261,6 +272,7 @@ export async function PUT(req: Request) {
             message: `🗓️ Modificación de Turno:\nEl paciente ${turnoActual.paciente.fullName} ha reprogramado su turno.\n\n✅ Nueva Fecha: ${fechaNueva}\n✅ Nuevo Horario: ${horaNueva} hs`
           })
         });
+        console.log(`[WhatsApp Modify] Respuesta admin: ${aRes.status}`);
       }
 
       // Create Notification bell inside app

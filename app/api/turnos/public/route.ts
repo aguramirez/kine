@@ -82,6 +82,8 @@ export async function POST(req: Request) {
       const fechaTurno = formatInArgentina(dateParsed, 'dd/MM/yyyy');
       const horaTurno = formatInArgentina(startTimeParsed, 'HH:mm');
 
+      console.log(`[WhatsApp Public] Intentando notificar a la URL: ${WHATSAPP_BOT_URL}/send-message`);
+
       if (newTurno.paciente.phone) {
         const patientRes = await fetch(`${WHATSAPP_BOT_URL}/send-message`, {
           method: "POST",
@@ -91,7 +93,7 @@ export async function POST(req: Request) {
             message: `¡Hola ${newTurno.paciente.fullName}!\nTu turno fue confirmado para el ${fechaTurno} a las ${horaTurno} hs con el Lic. ${newTurno.admin.fullName}.\nPodés ver/modificar tu turno acá: https://omegafit.agustindev.com.ar/turnos/buscar`
           })
         });
-        if (!patientRes.ok) console.error("Error notifying patient:", await patientRes.text());
+        console.log(`[WhatsApp Public] Respuesta paciente: ${patientRes.status} ${patientRes.statusText}`);
       }
 
       const adminData = await prisma.admin.findUnique({ where: { id: adminId } });
@@ -104,10 +106,10 @@ export async function POST(req: Request) {
             message: `¡Nuevo Turno!\n${newTurno.paciente.fullName} ha agendado un turno el ${fechaTurno} a las ${horaTurno}.`
           })
         });
-        if (!adminRes.ok) console.error("Error notifying admin:", await adminRes.text());
+        console.log(`[WhatsApp Public] Respuesta admin: ${adminRes.status} ${adminRes.statusText}`);
       }
     } catch (botErr) {
-      console.error("Critical error calling WhatsApp bot:", botErr);
+      console.error("[WhatsApp Public] Error crítico llamando al bot:", botErr);
     }
 
     return NextResponse.json(newTurno, { status: 201 });

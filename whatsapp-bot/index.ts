@@ -106,6 +106,26 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
     const url = req.url;
     const method = req.method;
 
+    // Configurar CORS
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+    if (method === "OPTIONS") {
+        res.writeHead(204);
+        res.end();
+        return;
+    }
+
+    logger.info(`${method} ${url}`);
+
+    // Health Check
+    if (url === "/health" && method === "GET") {
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ status: "OK", connection: connectionStatus }));
+        return;
+    }
+
     // Ruta Principal: UI de Control
     if (url === "/" && method === "GET") {
         res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
@@ -168,6 +188,8 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
         req.on("end", async () => {
             try {
                 const { phone, message } = JSON.parse(body);
+                logger.info(`Intento de envío de mensaje a: ${phone}`);
+
                 if (!phone || !message) {
                     res.writeHead(400);
                     res.end(JSON.stringify({ error: "Missing phone or message" }));
@@ -175,6 +197,7 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
                 }
 
                 if (!sock || connectionStatus !== "Conectado") {
+                    logger.error("Error: WhatsApp no está conectado");
                     res.writeHead(503);
                     res.end(JSON.stringify({ error: "WhatsApp not connected" }));
                     return;
@@ -183,11 +206,13 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
                 const formattedPhone = phone.includes("@") ? phone : `${phone.replace(/[^0-9]/g, "")}@s.whatsapp.net`;
                 await sock?.sendMessage(formattedPhone, { text: message });
                 
+                logger.info(`Mensaje enviado exitosamente a ${formattedPhone}`);
                 res.writeHead(200, { "Content-Type": "application/json" });
                 res.end(JSON.stringify({ success: true }));
-            } catch (err) {
+            } catch (err: any) {
+                logger.error(`Error procesando /send-message: ${err.message}`);
                 res.writeHead(500);
-                res.end(JSON.stringify({ error: "Error sending message" }));
+                res.end(JSON.stringify({ error: "Error sending message", details: err.message }));
             }
         });
         return;
