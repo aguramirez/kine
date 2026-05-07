@@ -90,7 +90,10 @@ export async function POST(req: Request) {
 
     // Trigger WhatsApp bot API call
     try {
-      const WHATSAPP_BOT_URL = process.env.WHATSAPP_BOT_URL || "http://localhost:3000";
+      let botUrl = process.env.WHATSAPP_BOT_URL || "http://localhost:3000";
+      if (botUrl.endsWith('/')) botUrl = botUrl.slice(0, -1); // Remove trailing slash
+      
+      const WHATSAPP_BOT_URL = botUrl;
       const fechaTurno = formatInArgentina(dateParsed, 'dd/MM/yyyy');
       const horaTurno = formatInArgentina(startTimeParsed, 'HH:mm');
 
@@ -154,7 +157,10 @@ export async function DELETE(req: Request) {
 
     // Notify Patient & Admin via WhatsApp
     try {
-      const WHATSAPP_BOT_URL = process.env.WHATSAPP_BOT_URL || "http://localhost:3000";
+      let botUrl = process.env.WHATSAPP_BOT_URL || "http://localhost:3000";
+      if (botUrl.endsWith('/')) botUrl = botUrl.slice(0, -1);
+      
+      const WHATSAPP_BOT_URL = botUrl;
       const fechaTurno = formatInArgentina(turno.date, 'dd/MM/yyyy');
       const horaTurno = formatInArgentina(turno.startTime, 'HH:mm');
 
@@ -242,7 +248,10 @@ export async function PUT(req: Request) {
 
     // Notify Patient via WhatsApp
     try {
-      const WHATSAPP_BOT_URL = process.env.WHATSAPP_BOT_URL || "http://localhost:3000";
+      let botUrl = process.env.WHATSAPP_BOT_URL || "http://localhost:3000";
+      if (botUrl.endsWith('/')) botUrl = botUrl.slice(0, -1);
+      
+      const WHATSAPP_BOT_URL = botUrl;
       const fechaOriginal = formatInArgentina(turnoActual.date, 'dd/MM/yyyy');
       const horaOriginal = formatInArgentina(turnoActual.startTime, 'HH:mm');
       const fechaNueva = formatInArgentina(updatedTurno.date, 'dd/MM/yyyy');

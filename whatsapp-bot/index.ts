@@ -103,8 +103,11 @@ async function connectToWhatsApp() {
 
 // --- Servidor HTTP Ligero ---
 const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
-    const url = req.url;
+    let url = req.url || "/";
     const method = req.method;
+
+    // Normalizar URL: quitar barras dobles (// -> /)
+    url = url.replace(/\/+/g, "/");
 
     // Configurar CORS
     res.setHeader("Access-Control-Allow-Origin", "*");

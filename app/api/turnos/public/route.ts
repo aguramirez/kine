@@ -78,7 +78,10 @@ export async function POST(req: Request) {
 
     // Trigger WhatsApp bot API call
     try {
-      const WHATSAPP_BOT_URL = process.env.WHATSAPP_BOT_URL || "http://localhost:3000";
+      let botUrl = process.env.WHATSAPP_BOT_URL || "http://localhost:3000";
+      if (botUrl.endsWith('/')) botUrl = botUrl.slice(0, -1);
+      
+      const WHATSAPP_BOT_URL = botUrl;
       const fechaTurno = formatInArgentina(dateParsed, 'dd/MM/yyyy');
       const horaTurno = formatInArgentina(startTimeParsed, 'HH:mm');
 
