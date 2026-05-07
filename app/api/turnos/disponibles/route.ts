@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { format, parse, addMinutes, isBefore, isAfter, isSameDay } from 'date-fns';
+import { addMinutes, isAfter, format } from 'date-fns';
+import { getArgentinaDayRange, parseArgentinaDate, getNowInArgentina } from '@/lib/date-utils';
+import { parse } from 'date-fns';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,9 +16,9 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'adminId y date requeridos' }, { status: 400 });
     }
 
-    const [year, month, day] = dateStr.split('-');
-    const date = new Date(Number(year), Number(month) - 1, Number(day));
-    const dayOfWeek = date.getDay(); // Local day of week
+    // Use our utility to get the range for the requested date in Argentina
+    const { start: startOfRequestedDay, end: endOfRequestedDay } = getArgentinaDayRange(dateStr);
+    const dayOfWeek = startOfRequestedDay.getDay(); 
 
     const [admin, baseSchedules, exception, turnos] = await Promise.all([
       prisma.admin.findUnique({ where: { id: adminId } }),
@@ -25,8 +27,8 @@ export async function GET(req: Request) {
         where: { 
           adminId,
           date: {
-            gte: new Date(dateStr + "T00:00:00.000Z"),
-            lte: new Date(dateStr + "T23:59:59.999Z")
+            gte: startOfRequestedDay,
+            lte: endOfRequestedDay
           }
         }
       }),
@@ -35,8 +37,8 @@ export async function GET(req: Request) {
           adminId,
           status: { not: 'CANCELLED' },
           date: {
-            gte: new Date(dateStr + "T00:00:00.000Z"),
-            lte: new Date(dateStr + "T23:59:59.999Z")
+            gte: startOfRequestedDay,
+            lte: endOfRequestedDay
           }
         }
       })
@@ -71,8 +73,9 @@ export async function GET(req: Request) {
     let availableSlots: Date[] = [];
 
     for (const range of ranges) {
-      let currentSlot = parse(range.start, 'HH:mm', date);
-      const endTime = parse(range.end, 'HH:mm', date);
+      // We parse the time relative to the requested day in Argentina
+      let currentSlot = parse(range.start, 'HH:mm', startOfRequestedDay);
+      const endTime = parse(range.end, 'HH:mm', startOfRequestedDay);
 
       while (addMinutes(currentSlot, slotDuration) <= endTime) {
         availableSlots.push(new Date(currentSlot));
@@ -81,11 +84,25 @@ export async function GET(req: Request) {
     }
 
     // Filter out occupied slots
-    const occupiedTimesStr = turnos.map(t => format(new Date(t.startTime), 'HH:mm'));
-    availableSlots = availableSlots.filter(slot => !occupiedTimesStr.includes(format(slot, 'HH:mm')));
+    // turnos.startTime are stored in UTC but represent specific moments.
+    // We compare based on their HH:mm representation in Argentina time.
+    const occupiedTimesStr = turnos.map(t => {
+      // startTime is already a Date object from Prisma
+      return format(t.startTime, 'HH:mm'); // format will use server local time, we should be careful.
+      // Wait, if I use format from date-fns, it uses local time.
+      // Better use our formatInArgentina if we want to be sure.
+    });
+
+    // Actually, availableSlots were created with startOfRequestedDay which might be UTC.
+    // Let's use formatInArgentina to be safe everywhere.
+    const { formatInArgentina } = await import('@/lib/date-utils');
+    
+    const occupiedTimes = turnos.map(t => formatInArgentina(t.startTime, 'HH:mm'));
+    
+    availableSlots = availableSlots.filter(slot => !occupiedTimes.includes(formatInArgentina(slot, 'HH:mm')));
 
     // Ensure we don't return past slots if today
-    const now = new Date();
+    const now = getNowInArgentina();
     availableSlots = availableSlots.filter(slot => isAfter(slot, now));
 
     return NextResponse.json(availableSlots.map(s => s.toISOString()), { status: 200 });
@@ -94,3 +111,4 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Error al obtener disponibilidad' }, { status: 500 });
   }
 }
+

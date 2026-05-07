@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { parseArgentinaDate, formatInArgentina } from '@/lib/date-utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,6 +12,10 @@ export async function POST(req: Request) {
     if (!adminId || !dni || !fullName || !phone || !date || !startTime || !endTime) {
       return NextResponse.json({ error: 'Faltan datos requeridos' }, { status: 400 });
     }
+
+    const dateParsed = parseArgentinaDate(date);
+    const startTimeParsed = parseArgentinaDate(startTime);
+    const endTimeParsed = parseArgentinaDate(endTime);
 
     // Find existing patient by DNI
     let paciente = await prisma.paciente.findUnique({ where: { dni } });
@@ -39,7 +44,7 @@ export async function POST(req: Request) {
     const existingTurno = await prisma.turno.findFirst({
       where: {
         adminId,
-        startTime: new Date(startTime),
+        startTime: startTimeParsed,
         status: { not: 'CANCELLED' }
       }
     });
@@ -52,9 +57,9 @@ export async function POST(req: Request) {
       data: {
         adminId,
         pacienteId: paciente.id,
-        date: new Date(date),
-        startTime: new Date(startTime),
-        endTime: new Date(endTime),
+        date: dateParsed,
+        startTime: startTimeParsed,
+        endTime: endTimeParsed,
         status: 'CONFIRMED'
       },
       include: {
@@ -67,30 +72,31 @@ export async function POST(req: Request) {
     await prisma.notificacion.create({
       data: {
         adminId,
-        message: `${newTurno.paciente.fullName} ha agendado un turno el ${new Date(date).toLocaleDateString('es-AR')} a las ${new Date(startTime).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}`
+        message: `${newTurno.paciente.fullName} ha agendado un turno el ${formatInArgentina(dateParsed, 'dd/MM/yyyy')} a las ${formatInArgentina(startTimeParsed, 'HH:mm')} hs`
       }
     });
 
     // Trigger WhatsApp bot API call
     try {
-      const WHATSAPP_BOT_URL = process.env.WHATSAPP_BOT_URL || "http://localhost:3001";
-      const fechaTurno = new Date(date).toLocaleDateString('es-AR');
-      const horaTurno = new Date(startTime).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+      const WHATSAPP_BOT_URL = process.env.WHATSAPP_BOT_URL || "http://localhost:3000";
+      const fechaTurno = formatInArgentina(dateParsed, 'dd/MM/yyyy');
+      const horaTurno = formatInArgentina(startTimeParsed, 'HH:mm');
 
       if (newTurno.paciente.phone) {
-        await fetch(`${WHATSAPP_BOT_URL}/send-message`, {
+        const patientRes = await fetch(`${WHATSAPP_BOT_URL}/send-message`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             phone: newTurno.paciente.phone,
-            message: `¡Hola ${newTurno.paciente.fullName}!\nTu turno fue confirmado para el ${fechaTurno} a las ${horaTurno} hs con el Lic. ${newTurno.admin.fullName}.`
+            message: `¡Hola ${newTurno.paciente.fullName}!\nTu turno fue confirmado para el ${fechaTurno} a las ${horaTurno} hs con el Lic. ${newTurno.admin.fullName}.\nPodés ver/modificar tu turno acá: https://omegafit.agustindev.com.ar/turnos/buscar`
           })
         });
+        if (!patientRes.ok) console.error("Error notifying patient:", await patientRes.text());
       }
 
       const adminData = await prisma.admin.findUnique({ where: { id: adminId } });
       if (adminData && adminData.phone) {
-        await fetch(`${WHATSAPP_BOT_URL}/send-message`, {
+        const adminRes = await fetch(`${WHATSAPP_BOT_URL}/send-message`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -98,9 +104,10 @@ export async function POST(req: Request) {
             message: `¡Nuevo Turno!\n${newTurno.paciente.fullName} ha agendado un turno el ${fechaTurno} a las ${horaTurno}.`
           })
         });
+        if (!adminRes.ok) console.error("Error notifying admin:", await adminRes.text());
       }
     } catch (botErr) {
-      console.error("Error calling WhatsApp bot", botErr);
+      console.error("Critical error calling WhatsApp bot:", botErr);
     }
 
     return NextResponse.json(newTurno, { status: 201 });
@@ -109,3 +116,4 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Error al crear turno' }, { status: 500 });
   }
 }
+

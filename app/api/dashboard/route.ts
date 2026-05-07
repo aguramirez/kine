@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { getArgentinaDayRange } from '@/lib/date-utils';
 
 export async function GET(req: Request) {
   try {
@@ -12,11 +13,8 @@ export async function GET(req: Request) {
       where: { isActive: true, ...whereAdmin },
     });
 
-    // Sesiones de hoy: pacientes que hicieron click en "Finalizar sesión" hoy
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    const todayEnd = new Date();
-    todayEnd.setHours(23, 59, 59, 999);
+    // Sesiones de hoy: pacientes que hicieron click en "Finalizar sesión" hoy in Argentina
+    const { start: todayStart, end: todayEnd } = getArgentinaDayRange();
 
     const sessionsToday = await prisma.paciente.count({
       where: {
@@ -61,3 +59,4 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Error al obtener estadísticas' }, { status: 500 });
   }
 }
+

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { parseArgentinaDate, formatInArgentina } from '@/lib/date-utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,8 +17,8 @@ export async function GET(req: Request) {
     if (pacienteId) where.pacienteId = pacienteId;
     if (startDate && endDate) {
       where.date = {
-        gte: new Date(startDate),
-        lte: new Date(endDate)
+        gte: parseArgentinaDate(startDate),
+        lte: parseArgentinaDate(endDate)
       };
     }
 
@@ -46,12 +47,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Faltan datos requeridos' }, { status: 400 });
     }
 
+    const dateParsed = parseArgentinaDate(date);
+    const startTimeParsed = parseArgentinaDate(startTime);
+    const endTimeParsed = parseArgentinaDate(endTime);
+
     // Check if slot is already taken
     const existingTurno = await prisma.turno.findFirst({
       where: {
         adminId,
-        date: new Date(date),
-        startTime: new Date(startTime),
+        date: dateParsed,
+        startTime: startTimeParsed,
         status: { not: 'CANCELLED' }
       }
     });
@@ -64,9 +69,9 @@ export async function POST(req: Request) {
       data: {
         adminId,
         pacienteId,
-        date: new Date(date),
-        startTime: new Date(startTime),
-        endTime: new Date(endTime),
+        date: dateParsed,
+        startTime: startTimeParsed,
+        endTime: endTimeParsed,
         status: 'CONFIRMED'
       },
       include: {
@@ -79,15 +84,15 @@ export async function POST(req: Request) {
     await prisma.notificacion.create({
       data: {
         adminId,
-        message: `${newTurno.paciente.fullName} ha agendado un turno el ${new Date(date).toLocaleDateString('es-AR')} a las ${new Date(startTime).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}`
+        message: `${newTurno.paciente.fullName} ha agendado un turno el ${formatInArgentina(dateParsed, 'dd/MM/yyyy')} a las ${formatInArgentina(startTimeParsed, 'HH:mm')} hs`
       }
     });
 
     // Trigger WhatsApp bot API call
     try {
-      const WHATSAPP_BOT_URL = process.env.WHATSAPP_BOT_URL || "http://localhost:3001";
-      const fechaTurno = new Date(date).toLocaleDateString('es-AR');
-      const horaTurno = new Date(startTime).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+      const WHATSAPP_BOT_URL = process.env.WHATSAPP_BOT_URL || "http://localhost:3000";
+      const fechaTurno = formatInArgentina(dateParsed, 'dd/MM/yyyy');
+      const horaTurno = formatInArgentina(startTimeParsed, 'HH:mm');
 
       // Notify Patient
       if (newTurno.paciente.phone) {
@@ -115,7 +120,6 @@ export async function POST(req: Request) {
       }
     } catch (botErr) {
       console.error("Error calling WhatsApp bot", botErr);
-      // We don't throw error here so the turno is still created successfully
     }
 
     return NextResponse.json(newTurno, { status: 201 });
@@ -144,19 +148,32 @@ export async function DELETE(req: Request) {
       data: { status: 'CANCELLED' }
     });
 
-    // Notify Patient via WhatsApp
+    // Notify Patient & Admin via WhatsApp
     try {
-      const WHATSAPP_BOT_URL = process.env.WHATSAPP_BOT_URL || "http://localhost:3001";
-      const fechaTurno = new Date(turno.date).toLocaleDateString('es-AR');
-      const horaTurno = new Date(turno.startTime).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+      const WHATSAPP_BOT_URL = process.env.WHATSAPP_BOT_URL || "http://localhost:3000";
+      const fechaTurno = formatInArgentina(turno.date, 'dd/MM/yyyy');
+      const horaTurno = formatInArgentina(turno.startTime, 'HH:mm');
 
+      // Notify Patient
       if (turno.paciente.phone) {
         await fetch(`${WHATSAPP_BOT_URL}/send-message`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             phone: turno.paciente.phone,
-            message: `Hola ${turno.paciente.fullName}, te informamos que tu turno del día ${fechaTurno} a las ${horaTurno} hs con el Lic. ${turno.admin.fullName} ha sido CANCELADO.\nPor favor comunicate para reprogramarlo o agenda de nuevo en: https://omegafit.agustindev.com.ar/turnos/buscar`
+            message: `Hola ${turno.paciente.fullName}, te informamos que tu turno del día ${fechaTurno} a las ${horaTurno} hs con el Lic. ${turno.admin.fullName} ha sido CANCELADO.\nPor favor comunicate para reprogramarlo o agenda de nuevo en: https://omegafit.agustindev.com.ar/turnos/agendar`
+          })
+        });
+      }
+
+      // Notify Admin
+      if (turno.admin.phone) {
+        await fetch(`${WHATSAPP_BOT_URL}/send-message`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            phone: turno.admin.phone,
+            message: `❌ Turno Cancelado:\nEl paciente ${turno.paciente.fullName} ha cancelado su turno del día ${fechaTurno} a las ${horaTurno} hs.`
           })
         });
       }
@@ -180,6 +197,10 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: 'Faltan datos' }, { status: 400 });
     }
 
+    const dateParsed = parseArgentinaDate(date);
+    const startTimeParsed = parseArgentinaDate(startTime);
+    const endTimeParsed = parseArgentinaDate(endTime);
+
     const turnoActual = await prisma.turno.findUnique({
       where: { id },
       include: { admin: true, paciente: true }
@@ -191,8 +212,8 @@ export async function PUT(req: Request) {
     const existing = await prisma.turno.findFirst({
       where: {
         adminId: turnoActual.adminId,
-        date: new Date(date),
-        startTime: new Date(startTime),
+        date: dateParsed,
+        startTime: startTimeParsed,
         status: { not: 'CANCELLED' },
         id: { not: id } // Exclude the current turno
       }
@@ -205,19 +226,19 @@ export async function PUT(req: Request) {
     const updatedTurno = await prisma.turno.update({
       where: { id },
       data: {
-        date: new Date(date),
-        startTime: new Date(startTime),
-        endTime: new Date(endTime)
+        date: dateParsed,
+        startTime: startTimeParsed,
+        endTime: endTimeParsed
       }
     });
 
     // Notify Patient via WhatsApp
     try {
-      const WHATSAPP_BOT_URL = process.env.WHATSAPP_BOT_URL || "http://localhost:3001";
-      const fechaOriginal = new Date(turnoActual.date).toLocaleDateString('es-AR');
-      const horaOriginal = new Date(turnoActual.startTime).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
-      const fechaNueva = new Date(updatedTurno.date).toLocaleDateString('es-AR');
-      const horaNueva = new Date(updatedTurno.startTime).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+      const WHATSAPP_BOT_URL = process.env.WHATSAPP_BOT_URL || "http://localhost:3000";
+      const fechaOriginal = formatInArgentina(turnoActual.date, 'dd/MM/yyyy');
+      const horaOriginal = formatInArgentina(turnoActual.startTime, 'HH:mm');
+      const fechaNueva = formatInArgentina(updatedTurno.date, 'dd/MM/yyyy');
+      const horaNueva = formatInArgentina(updatedTurno.startTime, 'HH:mm');
 
       if (turnoActual.paciente.phone) {
         await fetch(`${WHATSAPP_BOT_URL}/send-message`, {
@@ -259,3 +280,4 @@ export async function PUT(req: Request) {
     return NextResponse.json({ error: 'Error al modificar turno' }, { status: 500 });
   }
 }
+

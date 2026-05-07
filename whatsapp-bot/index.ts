@@ -93,7 +93,7 @@ async function connectToWhatsApp() {
 
         try {
             await sock?.sendMessage(msg.key.remoteJid!, { 
-                text: "Este número solamente envía recordatorios de turnos para OmegaFit, no es para comunicarse con los licenciados.\nPara agendar un turno entrar a: https://omegafit.agustindev.com.ar/turnos/buscar" 
+                text: "Este número solamente envía recordatorios de turnos para OmegaFit, no es para comunicarse con los licenciados.\nPara agendar un turno entrar a: https://omegafit.agustindev.com.ar/turnos/agendar" 
             });
         } catch (err) {
             logger.error("Error al enviar auto-respuesta: " + err);

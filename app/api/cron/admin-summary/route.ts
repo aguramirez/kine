@@ -1,16 +1,13 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { addDays, startOfDay, endOfDay, format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { addDays } from 'date-fns';
+import { getArgentinaDayRange, formatInArgentina, getNowInArgentina } from '@/lib/date-utils';
 
 export async function GET(req: Request) {
   try {
-    // Only allow via cron secret or internal call
-    // (Optional security check here)
-
-    const tomorrow = addDays(new Date(), 1);
-    const startOfTomorrow = startOfDay(tomorrow);
-    const endOfTomorrow = endOfDay(tomorrow);
+    // We want the range for tomorrow in Argentina
+    const tomorrow = addDays(getNowInArgentina(), 1);
+    const { start: startOfTomorrow, end: endOfTomorrow } = getArgentinaDayRange(tomorrow.toISOString().split('T')[0]);
 
     const admins = await prisma.admin.findMany({
       where: { phone: { not: null } },
@@ -31,8 +28,8 @@ export async function GET(req: Request) {
       });
 
       if (turnos.length > 0) {
-        const diaStr = format(tomorrow, "EEEE", { locale: es });
-        const primerTurnoHora = format(new Date(turnos[0].startTime), "HH:mm");
+        const diaStr = formatInArgentina(tomorrow, "EEEE");
+        const primerTurnoHora = formatInArgentina(turnos[0].startTime, "HH:mm");
         const message = `¡Hola! Mañana ${diaStr} tenés ${turnos.length} ${turnos.length === 1 ? 'turno' : 'turnos'}, el primero a las ${primerTurnoHora}hs.`;
         
         summaries.push({
@@ -48,3 +45,4 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Error generating summaries' }, { status: 500 });
   }
 }
+

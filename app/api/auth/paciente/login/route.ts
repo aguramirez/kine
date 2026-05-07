@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { signJwt } from '@/lib/auth';
+import { getNowInArgentina } from '@/lib/date-utils';
 
 export async function POST(req: Request) {
   try {
@@ -22,7 +23,7 @@ export async function POST(req: Request) {
     // Si is Active es falso, evaluamos la dischargeDate (Fecha límite)
     if (!paciente.isActive) {
       if (paciente.dischargeDate) {
-        const now = new Date();
+        const now = getNowInArgentina();
         const dischargeLimit = new Date(paciente.dischargeDate);
         
         if (now > dischargeLimit) {
@@ -47,3 +48,4 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
   }
 }
+

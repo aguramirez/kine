@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { getArgentinaDayRange, getNowInArgentina } from '@/lib/date-utils';
 
 // POST /api/pacientes/[id]/session — Incrementa sessionsCount y actualiza lastSessionDate
 export async function POST(
@@ -14,10 +15,10 @@ export async function POST(
       return NextResponse.json({ error: 'Paciente no encontrado' }, { status: 404 });
     }
 
-    // Check if already completed session today
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (paciente.lastSessionDate && new Date(paciente.lastSessionDate) >= today) {
+    // Check if already completed session today in Argentina
+    const { start: todayStart } = getArgentinaDayRange();
+    
+    if (paciente.lastSessionDate && new Date(paciente.lastSessionDate) >= todayStart) {
       return NextResponse.json({ error: 'Ya finalizaste tu sesión de hoy.' }, { status: 400 });
     }
 
@@ -25,7 +26,7 @@ export async function POST(
       where: { id },
       data: {
         sessionsCount: { increment: 1 },
-        lastSessionDate: new Date(),
+        lastSessionDate: getNowInArgentina(),
       },
     });
 
@@ -39,3 +40,4 @@ export async function POST(
     return NextResponse.json({ error: 'Error al registrar la sesión' }, { status: 500 });
   }
 }
+
